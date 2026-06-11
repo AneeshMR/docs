@@ -1,0 +1,31 @@
+---
+title: Authentification
+description: "Comment authentifier les requêtes vers les API RiDERgy"
+---
+
+## Clés API
+
+Chaque requête (à l'exception de `GET /health`) doit inclure un en-tête
+`x-api-key` contenant votre clé API :
+
+```bash
+curl https://6mxdqyggfh.execute-api.eu-central-1.amazonaws.com/v1/locations/3632155/limits \
+  -H "x-api-key: YOUR_API_KEY"
+```
+
+- Votre tenant est déterminé **uniquement** à partir de la clé API — jamais à
+  partir d'un champ du corps de la requête ou d'autres en-têtes. Une clé émise
+  pour votre organisation ne peut ni lire ni modifier les données d'une autre
+  organisation.
+- Contactez RiDERgy pour faire activer l'Energy Management API sur votre
+  compte et recevoir une clé API. Sans cette fonctionnalité activée, les
+  requêtes échouent avec `403 FEATURE_NOT_ENABLED`.
+- Les clés peuvent expirer. Une clé expirée ou invalide renvoie
+  `401 UNAUTHORIZED` (la même erreur générique dans les deux cas, afin de ne
+  divulguer aucune information sur la validité de la clé).
+
+## Utilisation du bac à sable « Try it »
+
+Chaque page d'endpoint de la **Référence API** propose un panneau dans lequel
+vous pouvez coller votre clé API et envoyer une requête réelle vers l'API de
+production. Les réponses affichées proviennent du système en production.

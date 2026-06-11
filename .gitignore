@@ -1,0 +1,12 @@
+# Dependencies
+node_modules/
+
+# Mintlify
+.mintlify/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

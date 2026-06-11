@@ -1,0 +1,999 @@
+openapi: 3.1.0
+info:
+  title: RiDERgy Energy Management API
+  version: "1.0"
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
+  description: |
+    对位置、单个充电桩、组织以及跨位置集群的充电功率限制进行程序化控制。
+
+    ## 身份验证
+    除 `GET /health` 外，所有接口都需要 `x-api-key` 请求头。该密钥
+    决定了您的租户——租户信息永远不会从请求体或其他任何
+    请求头中读取，因此一个租户的密钥无法访问另一个租户的数据。
+
+    您的租户必须已启用 Energy Management API 功能，否则
+    请求会返回 `403 FEATURE_NOT_ENABLED` 错误。请联系 RiDERgy 以启用该功能。
+
+    ## 优先级模型
+    位置和充电桩的限制通过**带优先级时间窗口的配置文件（profile）**进行控制：
+
+    - 优先级范围为 **0（最低）到 10（最高）**，与 OCPP 协议栈风格一致。
+    - 一个目标对象（位置或充电桩连接器）最多可以拥有 11 个配置文件，每个
+      优先级一个，每个配置文件都有自己的 `[startTime, endTime)` 时间窗口。
+    - 在任意时刻，**生效限制**为当前处于激活状态的配置文件中
+      优先级最高者的 `limitKw`。
+    - 如果没有配置文件处于激活状态，位置会回退到其 `permanentLimitKw`。
+    - 在某个目标对象的某个优先级上已存在配置文件时，再次提交该优先级的配置文件
+      将**替换**原有配置文件。
+    - 一个 1 分钟周期的定时任务（`emLimitProcessor`）会在配置文件的
+      `startTime`/`endTime` 自动应用并撤销配置——无需进行额外的
+      API 调用。配置文件记录永远不会被删除，因此历史记录始终可查询。
+
+    ## 错误
+    所有错误均采用以下结构：
+
+    ```json
+    {
+      "error": {
+        "code": "LOCATION_NOT_FOUND",
+        "message": "Location 123 was not found for the provided tenant",
+        "requestId": "b1f6e6b0-..."
+      }
+    }
+    ```
+servers:
+  - url: https://6mxdqyggfh.execute-api.eu-central-1.amazonaws.com/v1
+    description: Production
+security:
+  - ApiKeyAuth: []
+
+tags:
+  - name: Health
+    description: 无需身份验证的服务健康检查。
+  - name: Locations
+    description: 读取并设置位置级别的功率限制和优先级配置文件。
+  - name: Chargers
+    description: 在指定时间窗口内将单个充电桩连接器锁定为固定功率限制。
+  - name: Organizations
+    description: 租户范围内的总量限额配置文件（仅记录——尚未启用强制执行）。
+  - name: Clusters
+    description: 将多个位置归入一个共享 kW 上限的集群，并对其应用调度计划。
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: getHealth
+      description: 无需身份验证的健康检查。不需要 API 密钥。
+      security: []
+      responses:
+        "200":
+          description: 服务正常
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /locations/{locationId}/schedules:
+    post:
+      tags: [Locations]
+      summary: Create or replace a location priority limit profile
+      operationId: createLocationSchedule
+      description: |
+        为指定位置在给定优先级下创建一个带时间窗口的功率限制配置文件。
+        如果该位置在该优先级下已存在配置文件，将被替换。生效限制
+        会立即重新计算并写入到该位置。
+      parameters:
+        - $ref: "#/components/parameters/LocationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LimitProfileRequest"
+            examples:
+              example:
+                value:
+                  startTime: "2026-06-12T08:00:00Z"
+                  endTime: "2026-06-12T18:00:00Z"
+                  limitKw: 50.0
+                  priority: 5
+      responses:
+        "200":
+          description: 配置文件已创建/替换
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocationScheduleResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/FeatureNotEnabled"
+        "404":
+          description: 未找到该位置
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                locationNotFound:
+                  value:
+                    error:
+                      code: LOCATION_NOT_FOUND
+                      message: "Location 123 was not found for the provided tenant"
+                      requestId: "b1f6e6b0-1234-4abc-9def-000000000000"
+
+  /locations/{locationId}/limits:
+    get:
+      tags: [Locations]
+      summary: Get a location's permanent limit and all priority profiles
+      operationId: getLocationLimits
+      description: |
+        返回该位置的永久回退限制、当前生效限制，以及每个优先级的
+        配置文件（包括已过期和已计划的），并附带重新计算后的 `status`。
+      parameters:
+        - $ref: "#/components/parameters/LocationId"
+      responses:
+        "200":
+          description: 位置限制信息
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocationLimitsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/FeatureNotEnabled"
+        "404":
+          $ref: "#/components/responses/LocationNotFound"
+
+  /locations/{locationId}/limit:
+    put:
+      tags: [Locations]
+      summary: Set a location's permanent (fallback) limit
+      operationId: setLocationPermanentLimit
+      description: |
+        设置当该位置当前没有任何优先级配置文件处于激活状态时
+        所使用的永久限制。
+      parameters:
+        - $ref: "#/components/parameters/LocationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PermanentLimitRequest"
+            examples:
+              example:
+                value:
+                  limitKw: 100.0
+      responses:
+        "200":
+          description: 永久限制已更新
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PermanentLimitResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/FeatureNotEnabled"
+        "404":
+          $ref: "#/components/responses/LocationNotFound"
+
+  /chargers/{controllerUuid}/connectors/{connectorId}/schedules:
+    post:
+      tags: [Chargers]
+      summary: Create or replace a charger-level limit lock
+      operationId: createChargerSchedule
+      description: |
+        为单个连接器创建一个带时间窗口的功率限制锁定。
+
+        在该时间窗口处于 **ACTIVE** 状态期间，`emLimitProcessor` 会在
+        `charger_priority_prod` 中将该连接器标记为优先级锁定
+        （`source=energy_management_api`）。智能充电随后会将该
+        连接器从常规再平衡中排除——它会在不超过 `limitKw` 的范围内
+        不受限地运行，仅在该位置整体超出电网限制时，作为最后手段
+        对其进行限流（但不会低于其 6A 下限）。
+      parameters:
+        - $ref: "#/components/parameters/ControllerUuid"
+        - $ref: "#/components/parameters/ConnectorId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LimitProfileRequest"
+            examples:
+              example:
+                value:
+                  startTime: "2026-06-12T08:00:00Z"
+                  endTime: "2026-06-12T18:00:00Z"
+                  limitKw: 11.0
+                  priority: 5
+      responses:
+        "200":
+          description: 充电桩调度配置已创建/替换
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectorScheduleResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/FeatureNotEnabled"
+        "404":
+          description: 未找到充电桩/连接器
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                chargerNotFound:
+                  value:
+                    error:
+                      code: CHARGER_NOT_FOUND
+                      message: "Connector <controllerUuid>/<connectorId> was not found for the provided tenant"
+                      requestId: "b1f6e6b0-1234-4abc-9def-000000000000"
+
+  /organizations/schedules:
+    post:
+      tags: [Organizations]
+      summary: Create or replace an organization-wide cap profile
+      operationId: createOrganizationSchedule
+      description: |
+        为调用方租户（从 API 密钥中获取——路径或请求体中均不含
+        `orgId`）记录一个组织范围内的限额配置文件。
+
+        > **尚未启用强制执行。** 针对该租户所有位置的组织级限额
+        > 强制执行尚未生效（第 3 阶段，已推迟）。配置文件目前仅作
+        > 记录，供将来使用。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LimitProfileRequest"
+            examples:
+              example:
+                value:
+                  startTime: "2026-06-12T08:00:00Z"
+                  endTime: "2026-06-12T18:00:00Z"
+                  limitKw: 500.0
+                  priority: 5
+      responses:
+        "200":
+          description: 组织配置文件已创建/替换
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgScheduleResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/FeatureNotEnabled"
+
+  /organizations/limits:
+    get:
+      tags: [Organizations]
+      summary: List organization-wide cap profiles
+      operationId: getOrganizationLimits
+      description: |
+        列出调用方租户的所有组织级限额配置文件，并附带计算后的
+        状态。
+
+        > **尚未启用强制执行**——参见 `POST /organizations/schedules`。
+      responses:
+        "200":
+          description: 组织限额配置文件
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgLimitsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/FeatureNotEnabled"
+
+  /clusters:
+    post:
+      tags: [Clusters]
+      summary: Create a cluster
+      operationId: createCluster
+      description: |
+        创建一个集群，将多个位置归入单一的可选 kW 上限之下。所有
+        `locationIds` 必须属于调用方租户。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClusterCreateRequest"
+            examples:
+              example:
+                value:
+                  name: "North Campus"
+                  locationIds: ["3632155", "3632156"]
+                  limitKw: 200.0
+      responses:
+        "201":
+          description: 集群已创建
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cluster"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/FeatureNotEnabled"
+    get:
+      tags: [Clusters]
+      summary: List clusters
+      operationId: listClusters
+      description: 列出调用方租户的所有集群，按创建时间倒序排列。
+      responses:
+        "200":
+          description: 集群列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  clusters:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Cluster"
+                  count:
+                    type: integer
+                    example: 2
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/FeatureNotEnabled"
+
+  /clusters/{clusterId}:
+    get:
+      tags: [Clusters]
+      summary: Get a cluster's live status
+      operationId: getCluster
+      description: |
+        返回集群信息以及一个 `liveStatus` 数据块：实际总 kW
+        用电量、成员位置限制之和，以及经过比例缩放
+        （`scale = min(1, clusterLimitKw / sumLocationLimits)`）后每个位置的
+        `{setLimitKw, effectiveLimitKw, actualKw}`。
+      parameters:
+        - $ref: "#/components/parameters/ClusterId"
+      responses:
+        "200":
+          description: 集群详情及实时状态
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClusterDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/FeatureNotEnabled"
+        "404":
+          $ref: "#/components/responses/ClusterNotFound"
+    patch:
+      tags: [Clusters]
+      summary: Update a cluster
+      operationId: updateCluster
+      description: |
+        部分更新一个集群。可以提供 `name`、`limitKw`（或
+        `null` 以移除上限）、`locationIds`、或 `status`
+        （`ACTIVE`/`INACTIVE`）中的任意一项或多项。
+      parameters:
+        - $ref: "#/components/parameters/ClusterId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClusterPatchRequest"
+            examples:
+              example:
+                value:
+                  limitKw: 250.0
+      responses:
+        "200":
+          description: 已更新的集群
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cluster"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/FeatureNotEnabled"
+        "404":
+          $ref: "#/components/responses/ClusterNotFound"
+    delete:
+      tags: [Clusters]
+      summary: Delete a cluster
+      operationId: deleteCluster
+      description: 删除该集群记录。成员位置不受影响。
+      parameters:
+        - $ref: "#/components/parameters/ClusterId"
+      responses:
+        "200":
+          description: 集群已删除
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                    example: true
+                  clusterId:
+                    type: string
+                    example: "clst_20260612_a1b2c3d4"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/FeatureNotEnabled"
+        "404":
+          $ref: "#/components/responses/ClusterNotFound"
+
+  /clusters/{clusterId}/schedules:
+    post:
+      tags: [Clusters]
+      summary: Apply a schedule to every location in a cluster
+      operationId: applyClusterSchedule
+      description: |
+        将同一个 `LimitProfileRequest` 应用到该集群中的每个位置
+        （等效于对每个成员分别调用
+        `POST /locations/{locationId}/schedules`）。
+      parameters:
+        - $ref: "#/components/parameters/ClusterId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LimitProfileRequest"
+            examples:
+              example:
+                value:
+                  startTime: "2026-06-12T08:00:00Z"
+                  endTime: "2026-06-12T18:00:00Z"
+                  limitKw: 50.0
+                  priority: 5
+      responses:
+        "200":
+          description: 调度计划已应用到至少一个位置
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClusterScheduleResponse"
+        "400":
+          description: 集群未激活、为空，或请求体无效
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                clusterInactive:
+                  summary: CLUSTER_INACTIVE
+                  value:
+                    error:
+                      code: CLUSTER_INACTIVE
+                      message: "Cluster clst_20260612_a1b2c3d4 is inactive"
+                      requestId: "b1f6e6b0-1234-4abc-9def-000000000000"
+                clusterEmpty:
+                  summary: CLUSTER_EMPTY
+                  value:
+                    error:
+                      code: CLUSTER_EMPTY
+                      message: "Cluster has no locations"
+                      requestId: "b1f6e6b0-1234-4abc-9def-000000000000"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/FeatureNotEnabled"
+        "404":
+          $ref: "#/components/responses/ClusterNotFound"
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: 按租户分配的 API 密钥。租户信息从密钥中获取——绝不来自请求本身。
+
+  parameters:
+    LocationId:
+      name: locationId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: "3632155"
+    ControllerUuid:
+      name: controllerUuid
+      in: path
+      required: true
+      schema:
+        type: string
+      example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    ConnectorId:
+      name: connectorId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: "1"
+    ClusterId:
+      name: clusterId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: "clst_20260612_a1b2c3d4"
+
+  schemas:
+    LimitProfileRequest:
+      type: object
+      required: [startTime, endTime, limitKw]
+      properties:
+        startTime:
+          type: string
+          format: date-time
+          description: ISO-8601 UTC 时间戳。必填。
+          example: "2026-06-12T08:00:00Z"
+        endTime:
+          type: string
+          format: date-time
+          description: ISO-8601 UTC 时间戳。必须晚于 `startTime` 且为未来时间。必填。
+          example: "2026-06-12T18:00:00Z"
+        limitKw:
+          type: number
+          format: float
+          exclusiveMinimum: 0
+          description: 功率限制，单位为 kW。必须大于 0。必填。
+          example: 50.0
+        priority:
+          type: integer
+          minimum: 0
+          maximum: 10
+          default: 0
+          description: |
+            OCPP 协议栈风格的优先级级别，0（最低）到 10（最高）。
+            如果该目标对象在此优先级下已存在配置文件，再次提交将
+            替换该配置文件。
+          example: 5
+
+    PermanentLimitRequest:
+      type: object
+      required: [limitKw]
+      properties:
+        limitKw:
+          type: number
+          format: float
+          exclusiveMinimum: 0
+          example: 100.0
+
+    ProfileStatus:
+      type: string
+      enum: [SCHEDULED, ACTIVE, EXPIRED]
+
+    LocationScheduleResponse:
+      type: object
+      properties:
+        locationId:
+          type: string
+          example: "3632155"
+        priority:
+          type: integer
+          example: 5
+        limitKw:
+          type: number
+          example: 50.0
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        status:
+          $ref: "#/components/schemas/ProfileStatus"
+        permanentLimitKw:
+          type:
+            - number
+            - "null"
+          example: 100.0
+        effectiveLimitKw:
+          type:
+            - number
+            - "null"
+          example: 50.0
+
+    ProfileEntry:
+      type: object
+      properties:
+        priority:
+          type: integer
+          example: 5
+        limitKw:
+          type: number
+          example: 50.0
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        status:
+          $ref: "#/components/schemas/ProfileStatus"
+
+    LocationLimitsResponse:
+      type: object
+      properties:
+        locationId:
+          type: string
+          example: "3632155"
+        permanentLimitKw:
+          type:
+            - number
+            - "null"
+          example: 100.0
+        effectiveLimitKw:
+          type:
+            - number
+            - "null"
+          example: 50.0
+        profiles:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfileEntry"
+
+    PermanentLimitResponse:
+      type: object
+      properties:
+        locationId:
+          type: string
+          example: "3632155"
+        permanentLimitKw:
+          type: number
+          example: 100.0
+        effectiveLimitKw:
+          type:
+            - number
+            - "null"
+          example: 100.0
+
+    ConnectorScheduleResponse:
+      type: object
+      properties:
+        controllerUuid:
+          type: string
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        connectorId:
+          type: string
+          example: "1"
+        limitKw:
+          type: number
+          example: 11.0
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        status:
+          $ref: "#/components/schemas/ProfileStatus"
+
+    OrgScheduleResponse:
+      type: object
+      properties:
+        tenantUuid:
+          type: string
+        priority:
+          type: integer
+          example: 5
+        limitKw:
+          type: number
+          example: 500.0
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        status:
+          $ref: "#/components/schemas/ProfileStatus"
+        note:
+          type: string
+          example: "Organization-wide cap enforcement is not yet active; this profile is recorded for future use."
+
+    OrgProfileEntry:
+      type: object
+      properties:
+        priority:
+          type: integer
+          example: 5
+        limitKw:
+          type: number
+          example: 500.0
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        status:
+          $ref: "#/components/schemas/ProfileStatus"
+
+    OrgLimitsResponse:
+      type: object
+      properties:
+        tenantUuid:
+          type: string
+        profiles:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrgProfileEntry"
+        note:
+          type: string
+          example: "Organization-wide cap enforcement is not yet active; this profile is recorded for future use."
+
+    ClusterCreateRequest:
+      type: object
+      required: [name, locationIds]
+      properties:
+        name:
+          type: string
+          example: "North Campus"
+        locationIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+          example: ["3632155", "3632156"]
+        limitKw:
+          type:
+            - number
+            - "null"
+          format: float
+          exclusiveMinimum: 0
+          description: 可选的集群级 kW 上限。
+          example: 200.0
+
+    ClusterPatchRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "North Campus"
+        limitKw:
+          type:
+            - number
+            - "null"
+          description: 设置为 `null` 以移除集群上限。
+          example: 250.0
+        locationIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+
+    Cluster:
+      type: object
+      properties:
+        clusterId:
+          type: string
+          example: "clst_20260612_a1b2c3d4"
+        tenantUuid:
+          type: string
+        name:
+          type: string
+          example: "North Campus"
+        locationIds:
+          type: array
+          items:
+            type: string
+          example: ["3632155", "3632156"]
+        limitKw:
+          type:
+            - number
+            - "null"
+          example: 200.0
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ClusterLocationStatus:
+      type: object
+      properties:
+        locationId:
+          type: string
+          example: "3632155"
+        setLimitKw:
+          type: number
+          example: 100.0
+        effectiveLimitKw:
+          type: number
+          example: 80.0
+        actualKw:
+          type: number
+          example: 65.4
+
+    ClusterLiveStatus:
+      type: object
+      properties:
+        actualTotalKw:
+          type: number
+          example: 130.8
+        clusterLimitKw:
+          type:
+            - number
+            - "null"
+          example: 200.0
+        sumLocationLimits:
+          type: number
+          example: 200.0
+        withinLimit:
+          type: boolean
+          example: true
+        locations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClusterLocationStatus"
+
+    ClusterDetail:
+      allOf:
+        - $ref: "#/components/schemas/Cluster"
+        - type: object
+          properties:
+            liveStatus:
+              $ref: "#/components/schemas/ClusterLiveStatus"
+
+    ClusterScheduleResponse:
+      type: object
+      properties:
+        clusterId:
+          type: string
+          example: "clst_20260612_a1b2c3d4"
+        applied:
+          type: array
+          items:
+            allOf:
+              - type: object
+                properties:
+                  locationId:
+                    type: string
+              - $ref: "#/components/schemas/LocationScheduleResponse"
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              locationId:
+                type: string
+              error:
+                $ref: "#/components/schemas/Error"
+        totalLocations:
+          type: integer
+          example: 2
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "LOCATION_NOT_FOUND"
+            message:
+              type: string
+              example: "Location 123 was not found for the provided tenant"
+            requestId:
+              type: string
+              format: uuid
+
+  responses:
+    BadRequest:
+      description: 请求体无效，或目标对象未激活
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            invalidBody:
+              summary: INVALID_REQUEST_BODY
+              value:
+                error:
+                  code: INVALID_REQUEST_BODY
+                  message: "limitKw must be a positive number"
+                  requestId: "b1f6e6b0-1234-4abc-9def-000000000000"
+            targetInactive:
+              summary: TARGET_INACTIVE
+              value:
+                error:
+                  code: TARGET_INACTIVE
+                  message: "Location 123 is not active"
+                  requestId: "b1f6e6b0-1234-4abc-9def-000000000000"
+    Unauthorized:
+      description: 缺少 API 密钥，或密钥无效/已过期
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            unauthorized:
+              value:
+                error:
+                  code: UNAUTHORIZED
+                  message: "Invalid or inactive API key"
+                  requestId: "b1f6e6b0-1234-4abc-9def-000000000000"
+    FeatureNotEnabled:
+      description: 该租户未启用 Energy Management API
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            featureNotEnabled:
+              value:
+                error:
+                  code: FEATURE_NOT_ENABLED
+                  message: "The Energy Management API is not enabled for your account. Contact RiDERgy to enable this feature."
+                  requestId: "b1f6e6b0-1234-4abc-9def-000000000000"
+    LocationNotFound:
+      description: 未找到该位置
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            locationNotFound:
+              value:
+                error:
+                  code: LOCATION_NOT_FOUND
+                  message: "Location 123 was not found for the provided tenant"
+                  requestId: "b1f6e6b0-1234-4abc-9def-000000000000"
+    ClusterNotFound:
+      description: 未找到该集群
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            clusterNotFound:
+              value:
+                error:
+                  code: CLUSTER_NOT_FOUND
+                  message: "Cluster clst_20260612_a1b2c3d4 not found"
+                  requestId: "b1f6e6b0-1234-4abc-9def-000000000000"

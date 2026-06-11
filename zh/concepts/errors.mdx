@@ -1,0 +1,36 @@
+---
+title: 错误
+description: "错误响应格式和错误代码"
+---
+
+## 格式
+
+所有错误响应都采用以下格式:
+
+```json
+{
+  "error": {
+    "code": "LOCATION_NOT_FOUND",
+    "message": "Location 123 was not found for the provided tenant",
+    "requestId": "b1f6e6b0-1234-4abc-9def-000000000000"
+  }
+}
+```
+
+`requestId` 在每个请求中都是唯一的 —— 在就具体错误联系 RiDERgy 支持团队时,请附上该 ID。
+
+## 错误代码
+
+| Code | HTTP status | 含义 |
+| --- | --- | --- |
+| `UNAUTHORIZED` | 401 | API 密钥缺失、无效、未激活或已过期。 |
+| `FEATURE_NOT_ENABLED` | 403 | 您的租户未启用 Energy Management API。 |
+| `INVALID_REQUEST_BODY` | 400 | 请求正文缺少必填字段、JSON 格式错误,或未通过校验(例如 `limitKw <= 0`、`endTime <= startTime`、`endTime` 早于当前时间、`priority` 超出 0-10 范围)。 |
+| `TARGET_INACTIVE` | 400 | 目标位置被标记为非活动状态。 |
+| `LOCATION_NOT_FOUND` | 404 | 您的租户下不存在具有给定 `locationId` 的位置。 |
+| `CHARGER_NOT_FOUND` | 404 | 您的租户下不存在具有给定 `controllerUuid`/`connectorId` 的连接器。 |
+| `CLUSTER_NOT_FOUND` | 404 | 您的租户下不存在具有给定 `clusterId` 的集群。 |
+| `CLUSTER_INACTIVE` | 400 | 该集群的 `status` 为 `INACTIVE`。 |
+| `CLUSTER_EMPTY` | 400 | 该集群没有成员位置。 |
+| `NOT_FOUND` | 404 | 该路径/方法组合不是有效的端点。 |
+| `INTERNAL_ERROR` | 500 | 服务器端发生意外错误。 |

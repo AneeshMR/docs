@@ -1,0 +1,37 @@
+---
+title: Erros
+description: "Formato e códigos de resposta de erro"
+---
+
+## Formato
+
+Todas as respostas de erro partilham esta estrutura:
+
+```json
+{
+  "error": {
+    "code": "LOCATION_NOT_FOUND",
+    "message": "Location 123 was not found for the provided tenant",
+    "requestId": "b1f6e6b0-1234-4abc-9def-000000000000"
+  }
+}
+```
+
+`requestId` é único por pedido — inclua-o ao contactar o suporte da RiDERgy
+sobre um erro específico.
+
+## Códigos de erro
+
+| Código | Estado HTTP | Significado |
+| --- | --- | --- |
+| `UNAUTHORIZED` | 401 | Chave de API em falta, inválida, inativa ou expirada. |
+| `FEATURE_NOT_ENABLED` | 403 | A Energy Management API não está ativada para o seu tenant. |
+| `INVALID_REQUEST_BODY` | 400 | O corpo do pedido tem campos obrigatórios em falta, JSON malformado, ou falha na validação (por exemplo, `limitKw <= 0`, `endTime <= startTime`, `endTime` no passado, `priority` fora do intervalo 0–10). |
+| `TARGET_INACTIVE` | 400 | A localização de destino está marcada como inativa. |
+| `LOCATION_NOT_FOUND` | 404 | Não existe nenhuma localização com o `locationId` indicado para o seu tenant. |
+| `CHARGER_NOT_FOUND` | 404 | Não existe nenhum conector com o `controllerUuid`/`connectorId` indicados para o seu tenant. |
+| `CLUSTER_NOT_FOUND` | 404 | Não existe nenhum cluster com o `clusterId` indicado para o seu tenant. |
+| `CLUSTER_INACTIVE` | 400 | O `status` do cluster é `INACTIVE`. |
+| `CLUSTER_EMPTY` | 400 | O cluster não tem localizações membro. |
+| `NOT_FOUND` | 404 | A combinação de caminho/método não é um endpoint válido. |
+| `INTERNAL_ERROR` | 500 | Erro inesperado do lado do servidor. |

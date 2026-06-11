@@ -1,0 +1,21 @@
+---
+title: 身份验证
+description: "如何对 RiDERgy API 请求进行身份验证"
+---
+
+## API 密钥
+
+每个请求(`GET /health` 除外)都必须在 `x-api-key` 请求头中包含您的 API 密钥:
+
+```bash
+curl https://6mxdqyggfh.execute-api.eu-central-1.amazonaws.com/v1/locations/3632155/limits \
+  -H "x-api-key: YOUR_API_KEY"
+```
+
+- 您的租户**仅**通过 API 密钥识别 —— 绝不会从请求正文或其他请求头中的任何字段获取。为您的组织签发的密钥无法读取或修改其他组织的数据。
+- 请联系 RiDERgy 为您的账户启用 Energy Management API 并获取 API 密钥。如果未启用该功能,请求将返回 `403 FEATURE_NOT_ENABLED`。
+- 密钥可能会过期。过期或无效的密钥都会返回 `401 UNAUTHORIZED`(两种情况返回相同的通用错误,因此不会泄露密钥有效性的相关信息)。
+
+## 使用 "Try it" 测试面板
+
+**API Reference** 中的每个端点页面都提供一个面板,您可以在其中粘贴您的 API 密钥并向生产环境 API 发送真实请求。该面板中显示的响应来自实时系统。

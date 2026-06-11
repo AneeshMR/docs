@@ -1,0 +1,77 @@
+---
+title: Modelo de prioridades
+description: "Como funcionam os perfis de limite, as prioridades e os limites efetivos"
+---
+
+Os limites de localizações e carregadores são controlados através de
+**perfis com janelas de prioridade**, partilhados entre os endpoints de
+localização, carregador e cluster.
+
+## Níveis de prioridade
+
+- As prioridades variam entre **0 (mais baixa) e 10 (mais alta)**, seguindo a
+  mesma convenção dos níveis de stack dos perfis de carregamento OCPP.
+- Cada destino (uma localização ou um conector de carregador) pode ter
+  **até 11 perfis** — um por nível de prioridade — cada um com a sua própria
+  janela `[startTime, endTime)`.
+- Submeter um novo perfil numa prioridade que já existe para esse destino
+  **substitui** o perfil existente.
+
+## Limite efetivo
+
+A qualquer momento, o **limite efetivo** é o `limitKw` do
+**perfil de prioridade mais alta cuja janela está atualmente ativa**
+(`startTime <= now < endTime`).
+
+Se nenhum perfil estiver atualmente ativo:
+
+- As **localizações** recorrem ao `permanentLimitKw` (definido através de
+  `PUT /locations/{locationId}/limit`).
+- Os **carregadores** não têm valor de recurso — fora de uma janela ativa, o
+  conector não está bloqueado por prioridade e é gerido pela alocação normal
+  de smart-charging.
+
+## Aplicação/reversão automática
+
+Uma tarefa cron de 1 minuto (`emLimitProcessor`) avalia continuamente todos os
+perfis e aplica-os ou reverte-os no respetivo `startTime`/`endTime` —
+**não são necessárias mais chamadas à API** após a criação de um perfil.
+
+Os registos de perfis **nunca são eliminados** pelo processador (apenas a
+entrada de bloqueio de carregador derivada é removida no momento da
+expiração), pelo que o histórico completo de perfis permanece consultável
+através de `GET /locations/{locationId}/limits` e
+`GET /organizations/limits`.
+
+## Valores de estado
+
+Cada perfil reporta um `status` calculado:
+
+| Status      | Significado                                  |
+| ----------- | ----------------------------------------- |
+| `SCHEDULED` | `now < startTime` — ainda não está ativo        |
+| `ACTIVE`    | `startTime <= now < endTime`              |
+| `EXPIRED`   | `now >= endTime`                          |
+
+## Bloqueios ao nível do carregador
+
+`POST /chargers/{controllerUuid}/connectors/{connectorId}/schedules` cria um
+perfil para um único conector. Enquanto **ACTIVE**, o conector é excluído do
+rebalanceamento normal de smart-charging e funciona sem limitação até ao
+`limitKw` — só é limitado (nunca abaixo do seu mínimo de 6A) como último
+recurso, caso a localização no seu conjunto exceda o seu limite de rede.
+
+## Clusters
+
+Um [cluster](/pt/api-reference/energy-management/apply-cluster-schedule)
+agrupa várias localizações sob um limite opcional único em kW. Quando o
+consumo combinado do cluster ultrapassaria o `limitKw`, o limite efetivo de
+cada localização membro é reduzido proporcionalmente:
+
+```
+scale = min(1, clusterLimitKw / sum(memberLocationLimits))
+locationEffectiveLimit = locationSetLimitKw * scale
+```
+
+`POST /clusters/{clusterId}/schedules` aplica um único `LimitProfileRequest` a
+todas as localizações do cluster de uma só vez.

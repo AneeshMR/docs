@@ -1,0 +1,31 @@
+---
+title: Autenticação
+description: "Como autenticar pedidos às APIs da RiDERgy"
+---
+
+## Chaves de API
+
+Todos os pedidos (exceto `GET /health`) devem incluir um cabeçalho `x-api-key`
+com a sua chave de API:
+
+```bash
+curl https://6mxdqyggfh.execute-api.eu-central-1.amazonaws.com/v1/locations/3632155/limits \
+  -H "x-api-key: YOUR_API_KEY"
+```
+
+- O seu tenant é determinado **apenas** a partir da chave de API — nunca a
+  partir de qualquer campo no corpo do pedido ou de outros cabeçalhos. Uma
+  chave emitida para a sua organização não pode ler nem modificar dados de
+  outra organização.
+- Contacte a RiDERgy para ativar a Energy Management API na sua conta e
+  receber uma chave de API. Sem a funcionalidade ativada, os pedidos falham
+  com `403 FEATURE_NOT_ENABLED`.
+- As chaves podem expirar. Uma chave expirada ou inválida devolve
+  `401 UNAUTHORIZED` (o mesmo erro genérico em ambos os casos, para que não
+  seja revelada qualquer informação sobre a validade da chave).
+
+## Utilizar o playground "Try it"
+
+Cada página de endpoint na **API Reference** tem um painel onde pode colar a
+sua chave de API e enviar um pedido real para a API em produção. As respostas
+apresentadas aí provêm do sistema em produção.

@@ -1,0 +1,78 @@
+---
+title: Modèle de priorité
+description: "Fonctionnement des profils de limites, des priorités et des limites effectives"
+---
+
+Les limites des sites et des bornes sont contrôlées via des **profils à
+fenêtres de priorité**, partagés entre les endpoints des sites, des bornes et
+des clusters.
+
+## Niveaux de priorité
+
+- Les priorités vont de **0 (la plus basse) à 10 (la plus haute)**, suivant la
+  même convention que les niveaux de pile (stack levels) des profils de
+  charge OCPP.
+- Chaque cible (un site ou un connecteur de borne) peut avoir **jusqu'à 11
+  profils** — un par niveau de priorité — chacun avec sa propre fenêtre
+  `[startTime, endTime)`.
+- La soumission d'un nouveau profil à une priorité déjà existante pour cette
+  cible **remplace** le profil existant.
+
+## Limite effective
+
+À tout moment, la **limite effective** correspond au `limitKw` du **profil de
+priorité la plus élevée dont la fenêtre est actuellement active**
+(`startTime <= now < endTime`).
+
+Si aucun profil n'est actuellement actif :
+
+- Les **sites** se replient sur `permanentLimitKw` (défini via
+  `PUT /locations/{locationId}/limit`).
+- Les **bornes** n'ont pas de repli — en dehors d'une fenêtre active, le
+  connecteur n'est pas verrouillé par priorité et est géré par l'allocation
+  normale du smart-charging.
+
+## Application/annulation automatique
+
+Une tâche cron toutes les 1 minute (`emLimitProcessor`) évalue en continu tous
+les profils et les applique ou les annule à leur `startTime`/`endTime` —
+**aucun appel API supplémentaire n'est requis** une fois qu'un profil est créé.
+
+Les enregistrements de profils ne sont **jamais supprimés** par le processeur
+(seule l'entrée de verrouillage de borne dérivée est supprimée à
+l'expiration), de sorte que l'historique complet des profils reste consultable
+via `GET /locations/{locationId}/limits` et `GET /organizations/limits`.
+
+## Valeurs de statut
+
+Chaque profil indique un `status` calculé :
+
+| Status      | Signification                                  |
+| ----------- | ----------------------------------------------- |
+| `SCHEDULED` | `now < startTime` — pas encore actif        |
+| `ACTIVE`    | `startTime <= now < endTime`              |
+| `EXPIRED`   | `now >= endTime`                          |
+
+## Verrouillages au niveau borne
+
+`POST /chargers/{controllerUuid}/connectors/{connectorId}/schedules` crée un
+profil pour un seul connecteur. Tant qu'il est **ACTIVE**, le connecteur est
+exclu du rééquilibrage normal du smart-charging et fonctionne sans limitation
+jusqu'à `limitKw` — il n'est limité (jamais en dessous de son seuil plancher de
+6A) qu'en dernier recours, si le site dans son ensemble dépasse sa limite
+réseau.
+
+## Clusters
+
+Un [cluster](/fr/api-reference/energy-management/apply-cluster-schedule)
+regroupe plusieurs sites sous un plafond kW unique optionnel. Lorsque la
+consommation combinée du cluster dépasserait `limitKw`, la limite effective de
+chaque site membre est réduite proportionnellement :
+
+```
+scale = min(1, clusterLimitKw / sum(memberLocationLimits))
+locationEffectiveLimit = locationSetLimitKw * scale
+```
+
+`POST /clusters/{clusterId}/schedules` applique un seul `LimitProfileRequest`
+à tous les sites du cluster en une seule fois.

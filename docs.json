@@ -1,0 +1,492 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "RiDERgy",
+  "colors": {
+    "primary": "#0F172A",
+    "light": "#22D3EE",
+    "dark": "#0F172A"
+  },
+  "favicon": "/favicon.svg",
+  "logo": {
+    "light": "/logo/light.png",
+    "dark": "/logo/dark.png"
+  },
+  "navigation": {
+    "languages": [
+      {
+        "language": "de",
+        "default": true,
+        "tabs": [
+          {
+            "tab": "Dokumentation",
+            "groups": [
+              {
+                "group": "Erste Schritte",
+                "pages": [
+                  "index",
+                  "authentication"
+                ]
+              },
+              {
+                "group": "Konzepte",
+                "pages": [
+                  "concepts/priority-model",
+                  "concepts/errors"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API-Referenz",
+            "groups": [
+              {
+                "group": "Systemstatus",
+                "pages": [
+                  "api-reference/energy-management/health"
+                ]
+              },
+              {
+                "group": "Standorte",
+                "pages": [
+                  "api-reference/energy-management/create-location-schedule",
+                  "api-reference/energy-management/get-location-limits",
+                  "api-reference/energy-management/set-location-limit"
+                ]
+              },
+              {
+                "group": "Ladepunkte",
+                "pages": [
+                  "api-reference/energy-management/create-charger-lock"
+                ]
+              },
+              {
+                "group": "Organisationen",
+                "pages": [
+                  "api-reference/energy-management/create-organization-schedule",
+                  "api-reference/energy-management/list-organization-limits"
+                ]
+              },
+              {
+                "group": "Cluster",
+                "pages": [
+                  "api-reference/energy-management/create-cluster",
+                  "api-reference/energy-management/list-clusters",
+                  "api-reference/energy-management/get-cluster",
+                  "api-reference/energy-management/update-cluster",
+                  "api-reference/energy-management/delete-cluster",
+                  "api-reference/energy-management/apply-cluster-schedule"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "en",
+        "tabs": [
+          {
+            "tab": "Documentation",
+            "groups": [
+              {
+                "group": "Get Started",
+                "pages": [
+                  "en/index",
+                  "en/authentication"
+                ]
+              },
+              {
+                "group": "Concepts",
+                "pages": [
+                  "en/concepts/priority-model",
+                  "en/concepts/errors"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API Reference",
+            "groups": [
+              {
+                "group": "Health",
+                "pages": [
+                  "en/api-reference/energy-management/health"
+                ]
+              },
+              {
+                "group": "Locations",
+                "pages": [
+                  "en/api-reference/energy-management/create-location-schedule",
+                  "en/api-reference/energy-management/get-location-limits",
+                  "en/api-reference/energy-management/set-location-limit"
+                ]
+              },
+              {
+                "group": "Chargers",
+                "pages": [
+                  "en/api-reference/energy-management/create-charger-lock"
+                ]
+              },
+              {
+                "group": "Organizations",
+                "pages": [
+                  "en/api-reference/energy-management/create-organization-schedule",
+                  "en/api-reference/energy-management/list-organization-limits"
+                ]
+              },
+              {
+                "group": "Clusters",
+                "pages": [
+                  "en/api-reference/energy-management/create-cluster",
+                  "en/api-reference/energy-management/list-clusters",
+                  "en/api-reference/energy-management/get-cluster",
+                  "en/api-reference/energy-management/update-cluster",
+                  "en/api-reference/energy-management/delete-cluster",
+                  "en/api-reference/energy-management/apply-cluster-schedule"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "es",
+        "tabs": [
+          {
+            "tab": "Documentación",
+            "groups": [
+              {
+                "group": "Primeros pasos",
+                "pages": [
+                  "es/index",
+                  "es/authentication"
+                ]
+              },
+              {
+                "group": "Conceptos",
+                "pages": [
+                  "es/concepts/priority-model",
+                  "es/concepts/errors"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Referencia de la API",
+            "groups": [
+              {
+                "group": "Estado del sistema",
+                "pages": [
+                  "es/api-reference/energy-management/health"
+                ]
+              },
+              {
+                "group": "Ubicaciones",
+                "pages": [
+                  "es/api-reference/energy-management/create-location-schedule",
+                  "es/api-reference/energy-management/get-location-limits",
+                  "es/api-reference/energy-management/set-location-limit"
+                ]
+              },
+              {
+                "group": "Cargadores",
+                "pages": [
+                  "es/api-reference/energy-management/create-charger-lock"
+                ]
+              },
+              {
+                "group": "Organizaciones",
+                "pages": [
+                  "es/api-reference/energy-management/create-organization-schedule",
+                  "es/api-reference/energy-management/list-organization-limits"
+                ]
+              },
+              {
+                "group": "Clústeres",
+                "pages": [
+                  "es/api-reference/energy-management/create-cluster",
+                  "es/api-reference/energy-management/list-clusters",
+                  "es/api-reference/energy-management/get-cluster",
+                  "es/api-reference/energy-management/update-cluster",
+                  "es/api-reference/energy-management/delete-cluster",
+                  "es/api-reference/energy-management/apply-cluster-schedule"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "fr",
+        "tabs": [
+          {
+            "tab": "Documentation",
+            "groups": [
+              {
+                "group": "Premiers pas",
+                "pages": [
+                  "fr/index",
+                  "fr/authentication"
+                ]
+              },
+              {
+                "group": "Concepts",
+                "pages": [
+                  "fr/concepts/priority-model",
+                  "fr/concepts/errors"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Référence de l'API",
+            "groups": [
+              {
+                "group": "État du système",
+                "pages": [
+                  "fr/api-reference/energy-management/health"
+                ]
+              },
+              {
+                "group": "Emplacements",
+                "pages": [
+                  "fr/api-reference/energy-management/create-location-schedule",
+                  "fr/api-reference/energy-management/get-location-limits",
+                  "fr/api-reference/energy-management/set-location-limit"
+                ]
+              },
+              {
+                "group": "Bornes de recharge",
+                "pages": [
+                  "fr/api-reference/energy-management/create-charger-lock"
+                ]
+              },
+              {
+                "group": "Organisations",
+                "pages": [
+                  "fr/api-reference/energy-management/create-organization-schedule",
+                  "fr/api-reference/energy-management/list-organization-limits"
+                ]
+              },
+              {
+                "group": "Clusters",
+                "pages": [
+                  "fr/api-reference/energy-management/create-cluster",
+                  "fr/api-reference/energy-management/list-clusters",
+                  "fr/api-reference/energy-management/get-cluster",
+                  "fr/api-reference/energy-management/update-cluster",
+                  "fr/api-reference/energy-management/delete-cluster",
+                  "fr/api-reference/energy-management/apply-cluster-schedule"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "it",
+        "tabs": [
+          {
+            "tab": "Documentazione",
+            "groups": [
+              {
+                "group": "Per iniziare",
+                "pages": [
+                  "it/index",
+                  "it/authentication"
+                ]
+              },
+              {
+                "group": "Concetti",
+                "pages": [
+                  "it/concepts/priority-model",
+                  "it/concepts/errors"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Riferimento API",
+            "groups": [
+              {
+                "group": "Stato del sistema",
+                "pages": [
+                  "it/api-reference/energy-management/health"
+                ]
+              },
+              {
+                "group": "Posizioni",
+                "pages": [
+                  "it/api-reference/energy-management/create-location-schedule",
+                  "it/api-reference/energy-management/get-location-limits",
+                  "it/api-reference/energy-management/set-location-limit"
+                ]
+              },
+              {
+                "group": "Caricatori",
+                "pages": [
+                  "it/api-reference/energy-management/create-charger-lock"
+                ]
+              },
+              {
+                "group": "Organizzazioni",
+                "pages": [
+                  "it/api-reference/energy-management/create-organization-schedule",
+                  "it/api-reference/energy-management/list-organization-limits"
+                ]
+              },
+              {
+                "group": "Cluster",
+                "pages": [
+                  "it/api-reference/energy-management/create-cluster",
+                  "it/api-reference/energy-management/list-clusters",
+                  "it/api-reference/energy-management/get-cluster",
+                  "it/api-reference/energy-management/update-cluster",
+                  "it/api-reference/energy-management/delete-cluster",
+                  "it/api-reference/energy-management/apply-cluster-schedule"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "zh",
+        "tabs": [
+          {
+            "tab": "文档",
+            "groups": [
+              {
+                "group": "快速开始",
+                "pages": [
+                  "zh/index",
+                  "zh/authentication"
+                ]
+              },
+              {
+                "group": "概念",
+                "pages": [
+                  "zh/concepts/priority-model",
+                  "zh/concepts/errors"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API 参考",
+            "groups": [
+              {
+                "group": "健康检查",
+                "pages": [
+                  "zh/api-reference/energy-management/health"
+                ]
+              },
+              {
+                "group": "位置",
+                "pages": [
+                  "zh/api-reference/energy-management/create-location-schedule",
+                  "zh/api-reference/energy-management/get-location-limits",
+                  "zh/api-reference/energy-management/set-location-limit"
+                ]
+              },
+              {
+                "group": "充电桩",
+                "pages": [
+                  "zh/api-reference/energy-management/create-charger-lock"
+                ]
+              },
+              {
+                "group": "组织",
+                "pages": [
+                  "zh/api-reference/energy-management/create-organization-schedule",
+                  "zh/api-reference/energy-management/list-organization-limits"
+                ]
+              },
+              {
+                "group": "集群",
+                "pages": [
+                  "zh/api-reference/energy-management/create-cluster",
+                  "zh/api-reference/energy-management/list-clusters",
+                  "zh/api-reference/energy-management/get-cluster",
+                  "zh/api-reference/energy-management/update-cluster",
+                  "zh/api-reference/energy-management/delete-cluster",
+                  "zh/api-reference/energy-management/apply-cluster-schedule"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "pt",
+        "tabs": [
+          {
+            "tab": "Documentação",
+            "groups": [
+              {
+                "group": "Primeiros passos",
+                "pages": [
+                  "pt/index",
+                  "pt/authentication"
+                ]
+              },
+              {
+                "group": "Conceitos",
+                "pages": [
+                  "pt/concepts/priority-model",
+                  "pt/concepts/errors"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Referência da API",
+            "groups": [
+              {
+                "group": "Estado do sistema",
+                "pages": [
+                  "pt/api-reference/energy-management/health"
+                ]
+              },
+              {
+                "group": "Localizações",
+                "pages": [
+                  "pt/api-reference/energy-management/create-location-schedule",
+                  "pt/api-reference/energy-management/get-location-limits",
+                  "pt/api-reference/energy-management/set-location-limit"
+                ]
+              },
+              {
+                "group": "Carregadores",
+                "pages": [
+                  "pt/api-reference/energy-management/create-charger-lock"
+                ]
+              },
+              {
+                "group": "Organizações",
+                "pages": [
+                  "pt/api-reference/energy-management/create-organization-schedule",
+                  "pt/api-reference/energy-management/list-organization-limits"
+                ]
+              },
+              {
+                "group": "Clusters",
+                "pages": [
+                  "pt/api-reference/energy-management/create-cluster",
+                  "pt/api-reference/energy-management/list-clusters",
+                  "pt/api-reference/energy-management/get-cluster",
+                  "pt/api-reference/energy-management/update-cluster",
+                  "pt/api-reference/energy-management/delete-cluster",
+                  "pt/api-reference/energy-management/apply-cluster-schedule"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "socials": {}
+  }
+}

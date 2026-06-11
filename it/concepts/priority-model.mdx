@@ -1,0 +1,77 @@
+---
+title: Modello di priorità
+description: "Come funzionano i profili di limite, le priorità e i limiti effettivi"
+---
+
+I limiti di location e charger sono controllati tramite **profili con
+finestre di priorità**, condivisi tra gli endpoint di location, charger e
+cluster.
+
+## Livelli di priorità
+
+- Le priorità vanno da **0 (più bassa) a 10 (più alta)**, seguendo la stessa
+  convenzione dei livelli di stack dei profili di ricarica OCPP.
+- Ogni target (una location o un connettore di un charger) può avere **fino
+  a 11 profili** — uno per livello di priorità — ciascuno con la propria
+  finestra `[startTime, endTime)`.
+- L'invio di un nuovo profilo a una priorità già esistente per quel target
+  **sostituisce** quello esistente.
+
+## Limite effettivo
+
+In ogni momento, il **limite effettivo** è il `limitKw` del **profilo con
+priorità più alta la cui finestra è attualmente attiva**
+(`startTime <= now < endTime`).
+
+Se nessun profilo è attualmente attivo:
+
+- Le **location** ricadono sul `permanentLimitKw` (impostato tramite
+  `PUT /locations/{locationId}/limit`).
+- I **charger** non hanno un fallback — al di fuori di una finestra attiva,
+  il connettore non è bloccato per priorità ed è gestito dalla normale
+  allocazione di smart charging.
+
+## Applicazione/ripristino automatico
+
+Un cron job a 1 minuto (`emLimitProcessor`) valuta continuamente tutti i
+profili e li applica o li ripristina ai rispettivi `startTime`/`endTime` —
+**non sono necessarie ulteriori chiamate API** una volta creato un profilo.
+
+I record dei profili **non vengono mai eliminati** dal processore (alla
+scadenza viene rimossa solo la voce di blocco del charger derivata), quindi
+la cronologia completa dei profili rimane interrogabile tramite
+`GET /locations/{locationId}/limits` e `GET /organizations/limits`.
+
+## Valori di stato
+
+Ogni profilo riporta uno `status` calcolato:
+
+| Status      | Significato                                  |
+| ----------- | ----------------------------------------- |
+| `SCHEDULED` | `now < startTime` — non ancora attivo        |
+| `ACTIVE`    | `startTime <= now < endTime`              |
+| `EXPIRED`   | `now >= endTime`                          |
+
+## Blocchi a livello di charger
+
+`POST /chargers/{controllerUuid}/connectors/{connectorId}/schedules` crea un
+profilo per un singolo connettore. Mentre è **ACTIVE**, il connettore è
+escluso dal normale ribilanciamento dello smart charging e funziona senza
+limitazioni fino a `limitKw` — viene limitato (mai sotto la sua soglia minima
+di 6A) solo come ultima risorsa, se la location nel suo complesso supera il
+proprio limite di rete.
+
+## Cluster
+
+Un [cluster](/it/api-reference/energy-management/apply-cluster-schedule)
+raggruppa più location sotto un unico tetto massimo opzionale in kW. Quando
+l'assorbimento combinato del cluster supererebbe `limitKw`, il limite
+effettivo di ciascuna location membro viene ridotto proporzionalmente:
+
+```
+scale = min(1, clusterLimitKw / sum(memberLocationLimits))
+locationEffectiveLimit = locationSetLimitKw * scale
+```
+
+`POST /clusters/{clusterId}/schedules` applica un singolo `LimitProfileRequest`
+a tutte le location del cluster contemporaneamente.
