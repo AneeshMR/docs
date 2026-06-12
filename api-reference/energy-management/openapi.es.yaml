@@ -34,10 +34,10 @@ info:
       `permanentLimitKw`.
     - Enviar un perfil con una prioridad que ya tiene uno para ese objetivo lo
       **reemplaza**.
-    - Una tarea cron que se ejecuta cada minuto (`emLimitProcessor`) aplica y
-      revierte los perfiles automáticamente en su `startTime`/`endTime` — no se
-      necesitan más llamadas a la API. Los registros de perfiles nunca se
-      eliminan, por lo que el historial sigue siendo consultable.
+    - Los perfiles se aplican y revierten automáticamente en su
+      `startTime`/`endTime` — no se necesitan más llamadas a la API una vez
+      creado un perfil. Los registros de perfiles nunca se eliminan, por lo que
+      el historial sigue siendo consultable.
 
     ## Errores
     Todos los errores comparten esta forma:
@@ -211,13 +211,11 @@ paths:
         Crea un límite de potencia + bloqueo con ventana de tiempo para un
         único conector.
 
-        Mientras la ventana esté **ACTIVE**, `emLimitProcessor` marca este
-        conector como bloqueado por prioridad en `charger_priority_prod`
-        (`source=energy_management_api`). La carga inteligente excluye
-        entonces este conector del rebalanceo normal — funciona sin
-        limitación hasta `limitKw`, y solo se limita (nunca por debajo de su
-        piso de 6A) como último recurso si la ubicación supera de otro modo su
-        límite de red.
+        Mientras la ventana esté **ACTIVE**, este conector se considera
+        bloqueado por prioridad: queda excluido de la gestión de carga normal y
+        funciona sin limitación hasta `limitKw`. Solo se limita (nunca por
+        debajo de su piso de 6A) como último recurso si la ubicación supera de
+        otro modo su límite de red.
       parameters:
         - $ref: "#/components/parameters/ControllerUuid"
         - $ref: "#/components/parameters/ConnectorId"

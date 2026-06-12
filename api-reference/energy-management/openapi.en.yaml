@@ -28,9 +28,9 @@ info:
     - If no profile is active, a location falls back to its `permanentLimitKw`.
     - Submitting a profile at a priority that already has one for that target
       **replaces** it.
-    - A 1-minute cron job (`emLimitProcessor`) applies and reverts profiles
-      automatically at their `startTime`/`endTime` — no further API calls are
-      needed. Profile records are never deleted, so history remains queryable.
+    - Profiles are applied and reverted automatically at their
+      `startTime`/`endTime` — no further API calls are needed once a profile is
+      created. Profile records are never deleted, so history remains queryable.
 
     ## Errors
     All errors share this shape:
@@ -203,12 +203,11 @@ paths:
       description: |
         Creates a time-windowed power limit + lock for a single connector.
 
-        While the window is **ACTIVE**, `emLimitProcessor` marks this connector
-        as priority-locked in `charger_priority_prod`
-        (`source=energy_management_api`). Smart charging then excludes this
-        connector from normal rebalancing — it runs unthrottled up to
-        `limitKw`, and is only throttled (never below its 6A floor) as a
-        last resort if the location is otherwise over its grid limit.
+        While the window is **ACTIVE**, this connector is treated as
+        priority-locked: it is excluded from normal load management and runs
+        unthrottled up to `limitKw`. It is only throttled (never below its 6A
+        minimum) as a last resort if the location is otherwise over its grid
+        limit.
       parameters:
         - $ref: "#/components/parameters/ControllerUuid"
         - $ref: "#/components/parameters/ConnectorId"

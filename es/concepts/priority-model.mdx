@@ -27,19 +27,17 @@ Si no hay ningún perfil activo en ese momento:
 - Las **ubicaciones** recurren a `permanentLimitKw` (configurado mediante
   `PUT /locations/{locationId}/limit`).
 - Los **cargadores** no tienen un valor de respaldo — fuera de una ventana activa, el
-  conector no está bloqueado por prioridad y se gestiona mediante la asignación normal
-  de smart-charging.
+  conector no está bloqueado por prioridad y se gestiona mediante la gestión de
+  carga normal.
 
 ## Aplicación y reversión automáticas
 
-Una tarea cron de 1 minuto (`emLimitProcessor`) evalúa continuamente todos los perfiles
-y los aplica o revierte en su `startTime`/`endTime` — **no se requieren más llamadas a
-la API** una vez creado un perfil.
+Los perfiles se aplican y revierten automáticamente en su `startTime`/`endTime`
+— **no se requieren más llamadas a la API** una vez creado un perfil.
 
-El procesador **nunca elimina** los registros de perfil (solo se elimina la entrada
-de bloqueo de cargador derivada al expirar), por lo que el historial completo de perfiles
-permanece consultable mediante `GET /locations/{locationId}/limits` y
-`GET /organizations/limits`.
+Los registros de perfil **nunca se eliminan** al expirar, por lo que el
+historial completo de perfiles permanece consultable mediante
+`GET /locations/{locationId}/limits` y `GET /organizations/limits`.
 
 ## Valores de estado
 
@@ -54,10 +52,10 @@ Cada perfil reporta un `status` calculado:
 ## Bloqueos a nivel de cargador
 
 `POST /chargers/{controllerUuid}/connectors/{connectorId}/schedules` crea un
-perfil para un único conector. Mientras está **ACTIVE**, el conector queda excluido
-del rebalanceo normal de smart-charging y funciona sin restricciones hasta `limitKw` —
-solo se limita (nunca por debajo de su piso de 6A) como último recurso si la
-ubicación en su conjunto supera su límite de red.
+perfil para un único conector. Mientras está **ACTIVE**, el conector queda
+bloqueado por prioridad: queda excluido de la gestión de carga normal y funciona
+sin restricciones hasta `limitKw` — solo se limita (nunca por debajo de su piso
+de 6A) como último recurso si la ubicación en su conjunto supera su límite de red.
 
 ## Clústeres
 

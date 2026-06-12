@@ -29,19 +29,18 @@ Si aucun profil n'est actuellement actif :
 - Les **sites** se replient sur `permanentLimitKw` (défini via
   `PUT /locations/{locationId}/limit`).
 - Les **bornes** n'ont pas de repli — en dehors d'une fenêtre active, le
-  connecteur n'est pas verrouillé par priorité et est géré par l'allocation
-  normale du smart-charging.
+  connecteur n'est pas verrouillé par priorité et est géré par la gestion de
+  charge normale.
 
 ## Application/annulation automatique
 
-Une tâche cron toutes les 1 minute (`emLimitProcessor`) évalue en continu tous
-les profils et les applique ou les annule à leur `startTime`/`endTime` —
-**aucun appel API supplémentaire n'est requis** une fois qu'un profil est créé.
+Les profils sont appliqués et annulés automatiquement à leur
+`startTime`/`endTime` — **aucun appel API supplémentaire n'est requis** une fois
+qu'un profil est créé.
 
-Les enregistrements de profils ne sont **jamais supprimés** par le processeur
-(seule l'entrée de verrouillage de borne dérivée est supprimée à
-l'expiration), de sorte que l'historique complet des profils reste consultable
-via `GET /locations/{locationId}/limits` et `GET /organizations/limits`.
+Les enregistrements de profils ne sont **jamais supprimés** à l'expiration, de
+sorte que l'historique complet des profils reste consultable via
+`GET /locations/{locationId}/limits` et `GET /organizations/limits`.
 
 ## Valeurs de statut
 
@@ -57,10 +56,10 @@ Chaque profil indique un `status` calculé :
 
 `POST /chargers/{controllerUuid}/connectors/{connectorId}/schedules` crée un
 profil pour un seul connecteur. Tant qu'il est **ACTIVE**, le connecteur est
-exclu du rééquilibrage normal du smart-charging et fonctionne sans limitation
-jusqu'à `limitKw` — il n'est limité (jamais en dessous de son seuil plancher de
-6A) qu'en dernier recours, si le site dans son ensemble dépasse sa limite
-réseau.
+verrouillé en priorité : il est exclu de la gestion de charge normale et
+fonctionne sans limitation jusqu'à `limitKw` — il n'est limité (jamais en
+dessous de son seuil plancher de 6A) qu'en dernier recours, si le site dans son
+ensemble dépasse sa limite réseau.
 
 ## Clusters
 

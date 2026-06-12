@@ -32,10 +32,10 @@ info:
     - Si aucun profil n'est actif, un site revient à son `permanentLimitKw`.
     - Soumettre un profil à une priorité qui en possède déjà un pour cette cible
       le **remplace**.
-    - Une tâche cron toutes les 1 minute (`emLimitProcessor`) applique et annule
-      automatiquement les profils à leurs `startTime`/`endTime` — aucun appel
-      d'API supplémentaire n'est nécessaire. Les enregistrements de profils ne
-      sont jamais supprimés, l'historique reste donc consultable.
+    - Les profils sont appliqués et annulés automatiquement à leurs
+      `startTime`/`endTime` — aucun appel d'API supplémentaire n'est nécessaire
+      une fois le profil créé. Les enregistrements de profils ne sont jamais
+      supprimés, l'historique reste donc consultable.
 
     ## Erreurs
     Toutes les erreurs partagent cette forme :
@@ -209,13 +209,11 @@ paths:
         Crée un verrou de limite de puissance à fenêtre temporelle pour un seul
         connecteur.
 
-        Pendant que la fenêtre est **ACTIVE**, `emLimitProcessor` marque ce
-        connecteur comme verrouillé en priorité dans `charger_priority_prod`
-        (`source=energy_management_api`). Le smart charging exclut alors ce
-        connecteur du rééquilibrage normal — il fonctionne sans limitation
-        jusqu'à `limitKw`, et n'est limité (jamais en dessous de son plancher
-        de 6A) qu'en dernier recours si le site dépasse par ailleurs sa limite
-        réseau.
+        Pendant que la fenêtre est **ACTIVE**, ce connecteur est considéré
+        comme verrouillé en priorité : il est exclu de la gestion de charge
+        normale et fonctionne sans limitation jusqu'à `limitKw`. Il n'est limité
+        (jamais en dessous de son plancher de 6A) qu'en dernier recours si le
+        site dépasse par ailleurs sa limite réseau.
       parameters:
         - $ref: "#/components/parameters/ControllerUuid"
         - $ref: "#/components/parameters/ConnectorId"

@@ -28,20 +28,18 @@ Se nenhum perfil estiver atualmente ativo:
 - As **localizações** recorrem ao `permanentLimitKw` (definido através de
   `PUT /locations/{locationId}/limit`).
 - Os **carregadores** não têm valor de recurso — fora de uma janela ativa, o
-  conector não está bloqueado por prioridade e é gerido pela alocação normal
-  de smart-charging.
+  conector não está bloqueado por prioridade e é gerido pela gestão de carga
+  normal.
 
 ## Aplicação/reversão automática
 
-Uma tarefa cron de 1 minuto (`emLimitProcessor`) avalia continuamente todos os
-perfis e aplica-os ou reverte-os no respetivo `startTime`/`endTime` —
-**não são necessárias mais chamadas à API** após a criação de um perfil.
+Os perfis são aplicados ou revertidos automaticamente no respetivo
+`startTime`/`endTime` — **não são necessárias mais chamadas à API** após a
+criação de um perfil.
 
-Os registos de perfis **nunca são eliminados** pelo processador (apenas a
-entrada de bloqueio de carregador derivada é removida no momento da
-expiração), pelo que o histórico completo de perfis permanece consultável
-através de `GET /locations/{locationId}/limits` e
-`GET /organizations/limits`.
+Os registos de perfis **nunca são eliminados** no momento da expiração, pelo
+que o histórico completo de perfis permanece consultável através de
+`GET /locations/{locationId}/limits` e `GET /organizations/limits`.
 
 ## Valores de estado
 
@@ -56,9 +54,9 @@ Cada perfil reporta um `status` calculado:
 ## Bloqueios ao nível do carregador
 
 `POST /chargers/{controllerUuid}/connectors/{connectorId}/schedules` cria um
-perfil para um único conector. Enquanto **ACTIVE**, o conector é excluído do
-rebalanceamento normal de smart-charging e funciona sem limitação até ao
-`limitKw` — só é limitado (nunca abaixo do seu mínimo de 6A) como último
+perfil para um único conector. Enquanto **ACTIVE**, o conector está bloqueado
+por prioridade: é excluído da gestão de carga normal e funciona sem limitação
+até ao `limitKw` — só é limitado (nunca abaixo do seu mínimo de 6A) como último
 recurso, caso a localização no seu conjunto exceda o seu limite de rede.
 
 ## Clusters

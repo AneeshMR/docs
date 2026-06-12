@@ -29,16 +29,15 @@ Se nessun profilo è attualmente attivo:
   `PUT /locations/{locationId}/limit`).
 - I **charger** non hanno un fallback — al di fuori di una finestra attiva,
   il connettore non è bloccato per priorità ed è gestito dalla normale
-  allocazione di smart charging.
+  gestione del carico.
 
 ## Applicazione/ripristino automatico
 
-Un cron job a 1 minuto (`emLimitProcessor`) valuta continuamente tutti i
-profili e li applica o li ripristina ai rispettivi `startTime`/`endTime` —
-**non sono necessarie ulteriori chiamate API** una volta creato un profilo.
+I profili vengono applicati o ripristinati automaticamente ai rispettivi
+`startTime`/`endTime` — **non sono necessarie ulteriori chiamate API** una volta
+creato un profilo.
 
-I record dei profili **non vengono mai eliminati** dal processore (alla
-scadenza viene rimossa solo la voce di blocco del charger derivata), quindi
+I record dei profili **non vengono mai eliminati** alla scadenza, quindi
 la cronologia completa dei profili rimane interrogabile tramite
 `GET /locations/{locationId}/limits` e `GET /organizations/limits`.
 
@@ -56,10 +55,10 @@ Ogni profilo riporta uno `status` calcolato:
 
 `POST /chargers/{controllerUuid}/connectors/{connectorId}/schedules` crea un
 profilo per un singolo connettore. Mentre è **ACTIVE**, il connettore è
-escluso dal normale ribilanciamento dello smart charging e funziona senza
-limitazioni fino a `limitKw` — viene limitato (mai sotto la sua soglia minima
-di 6A) solo come ultima risorsa, se la location nel suo complesso supera il
-proprio limite di rete.
+priority-locked: viene escluso dalla normale gestione del carico e funziona
+senza limitazioni fino a `limitKw` — viene limitato (mai sotto la sua soglia
+minima di 6A) solo come ultima risorsa, se la location nel suo complesso supera
+il proprio limite di rete.
 
 ## Cluster
 

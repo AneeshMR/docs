@@ -28,18 +28,16 @@ Ist gerade kein Profil aktiv:
 - **Standorte** fallen zurück auf `permanentLimitKw` (gesetzt über
   `PUT /locations/{locationId}/limit`).
 - **Ladepunkte** haben keinen Fallback — außerhalb eines aktiven Zeitfensters
-  ist der Connector nicht prioritätsgesperrt und wird durch die normale
-  Smart-Charging-Verteilung gesteuert.
+  ist der Connector nicht prioritätsgesperrt und wird durch das normale
+  Lastmanagement gesteuert.
 
 ## Automatisches Anwenden/Zurücksetzen
 
-Ein minütlicher Cron-Job (`emLimitProcessor`) wertet kontinuierlich alle
-Profile aus und wendet sie zu ihrer `startTime`/`endTime` an bzw. setzt sie
-zurück — **es sind keine weiteren API-Aufrufe nötig**, sobald ein Profil
+Profile werden automatisch zu ihrer `startTime`/`endTime` angewendet bzw.
+zurückgesetzt — **es sind keine weiteren API-Aufrufe nötig**, sobald ein Profil
 erstellt wurde.
 
-Profil-Datensätze werden vom Prozessor **niemals gelöscht** (nur der daraus
-abgeleitete Ladepunkt-Lock-Eintrag wird beim Ablauf entfernt), sodass der
+Profil-Datensätze werden beim Ablauf **niemals gelöscht**, sodass der
 gesamte Profil-Verlauf weiterhin über `GET /locations/{locationId}/limits` und
 `GET /organizations/limits` abrufbar ist.
 
@@ -56,10 +54,10 @@ Jedes Profil meldet einen berechneten `status`:
 ## Ladepunkt-Sperren
 
 `POST /chargers/{controllerUuid}/connectors/{connectorId}/schedules` erstellt
-ein Profil für einen einzelnen Connector. Solange es **ACTIVE** ist, wird der
-Connector von der normalen Smart-Charging-Umverteilung ausgenommen und läuft
-ungedrosselt bis zu `limitKw` — er wird nur als letztes Mittel gedrosselt
-(nie unter seine 6A-Untergrenze), falls der Standort insgesamt sein
+ein Profil für einen einzelnen Connector. Solange es **ACTIVE** ist, ist der
+Connector prioritätsgesperrt: Er wird vom normalen Lastmanagement ausgenommen
+und läuft ungedrosselt bis zu `limitKw` — er wird nur als letztes Mittel
+gedrosselt (nie unter seine 6A-Untergrenze), falls der Standort insgesamt sein
 Netzanschluss-Limit überschreitet.
 
 ## Cluster

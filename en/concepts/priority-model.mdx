@@ -27,17 +27,15 @@ If no profile is currently active:
 - **Locations** fall back to `permanentLimitKw` (set via
   `PUT /locations/{locationId}/limit`).
 - **Chargers** have no fallback — outside an active window, the connector is
-  not priority-locked and is managed by normal smart-charging allocation.
+  not priority-locked and is managed by normal load management.
 
 ## Automatic apply/revert
 
-A 1-minute cron job (`emLimitProcessor`) continuously evaluates all profiles
-and applies or reverts them at their `startTime`/`endTime` — **no further API
-calls are required** once a profile is created.
+Profiles are applied and reverted automatically at their `startTime`/`endTime`
+— **no further API calls are required** once a profile is created.
 
-Profile records are **never deleted** by the processor (only the derived
-charger-lock entry is removed on expiry), so the full history of profiles
-remains queryable via `GET /locations/{locationId}/limits` and
+Profile records are **never deleted** when they expire, so the full history of
+profiles remains queryable via `GET /locations/{locationId}/limits` and
 `GET /organizations/limits`.
 
 ## Status values
@@ -53,10 +51,10 @@ Every profile reports a computed `status`:
 ## Charger-level locks
 
 `POST /chargers/{controllerUuid}/connectors/{connectorId}/schedules` creates a
-profile for a single connector. While **ACTIVE**, the connector is excluded
-from normal smart-charging rebalancing and runs unthrottled up to `limitKw` —
-it is only throttled (never below its 6A floor) as a last resort if the
-location as a whole is over its grid limit.
+profile for a single connector. While **ACTIVE**, the connector is
+priority-locked: it is excluded from normal load management and runs
+unthrottled up to `limitKw` — it is only throttled (never below its 6A
+minimum) as a last resort if the location as a whole is over its grid limit.
 
 ## Clusters
 

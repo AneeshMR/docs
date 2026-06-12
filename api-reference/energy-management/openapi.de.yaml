@@ -34,10 +34,10 @@ info:
       zurück.
     - Wird ein Profil mit einer Priorität übermittelt, für die für dieses Ziel
       bereits eines existiert, wird dieses **ersetzt**.
-    - Ein 1-minütiger Cron-Job (`emLimitProcessor`) wendet Profile automatisch
-      zu ihrer `startTime`/`endTime` an und macht sie wieder rückgängig — es
-      sind keine weiteren API-Aufrufe erforderlich. Profil-Datensätze werden
-      nie gelöscht, sodass die Historie weiterhin abfragbar bleibt.
+    - Profile werden automatisch zu ihrer `startTime`/`endTime` angewendet und
+      wieder rückgängig gemacht — nach dem Erstellen eines Profils sind keine
+      weiteren API-Aufrufe erforderlich. Profil-Datensätze werden nie gelöscht,
+      sodass die Historie weiterhin abfragbar bleibt.
 
     ## Fehler
     Alle Fehler haben diese Form:
@@ -212,11 +212,9 @@ paths:
         Erstellt eine zeitfensterbasierte Leistungslimit-Sperre für einen
         einzelnen Connector.
 
-        Solange das Zeitfenster **ACTIVE** ist, markiert `emLimitProcessor`
-        diesen Connector als prioritätsgesperrt in `charger_priority_prod`
-        (`source=energy_management_api`). Smart Charging schließt diesen
-        Connector dann von der normalen Neuverteilung aus — er läuft
-        ungedrosselt bis zu `limitKw` und wird nur als letztes Mittel (nie
+        Solange das Zeitfenster **ACTIVE** ist, gilt dieser Connector als
+        prioritätsgesperrt: Er wird vom normalen Lastmanagement ausgenommen und
+        läuft ungedrosselt bis zu `limitKw`. Er wird nur als letztes Mittel (nie
         unter sein 6A-Minimum) gedrosselt, falls der Standort sein Netzlimit
         ansonsten überschreitet.
       parameters:

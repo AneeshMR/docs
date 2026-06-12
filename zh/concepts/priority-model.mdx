@@ -18,13 +18,13 @@ description: "限制配置文件、优先级和有效限制的工作原理"
 如果当前没有处于活动状态的配置文件:
 
 - **位置**将回退到 `permanentLimitKw`(通过 `PUT /locations/{locationId}/limit` 设置)。
-- **充电桩**没有回退机制 —— 在活动窗口之外,该连接器不会被优先级锁定,而是由常规的智能充电分配进行管理。
+- **充电桩**没有回退机制 —— 在活动窗口之外,该连接器不会被优先级锁定,而是由常规的负载管理进行管理。
 
 ## 自动应用/还原
 
-每分钟运行一次的定时任务(`emLimitProcessor`)会持续评估所有配置文件,并在其 `startTime`/`endTime` 应用或还原它们 —— 一旦创建了配置文件,**无需进一步调用 API**。
+配置文件会在其 `startTime`/`endTime` 自动应用或还原 —— 一旦创建了配置文件,**无需进一步调用 API**。
 
-处理器**不会删除**配置文件记录(过期时仅会移除派生的充电桩锁定条目),因此可以通过 `GET /locations/{locationId}/limits` 和 `GET /organizations/limits` 查询完整的配置文件历史记录。
+配置文件记录在过期后**不会被删除**,因此可以通过 `GET /locations/{locationId}/limits` 和 `GET /organizations/limits` 查询完整的配置文件历史记录。
 
 ## 状态值
 
@@ -38,7 +38,7 @@ description: "限制配置文件、优先级和有效限制的工作原理"
 
 ## 充电桩级锁定
 
-`POST /chargers/{controllerUuid}/connectors/{connectorId}/schedules` 为单个连接器创建一个配置文件。在 **ACTIVE** 状态下,该连接器将被排除在常规智能充电再平衡之外,并以不受限的方式运行,最高可达 `limitKw` —— 仅当整个位置超出其电网限制时,才会作为最后手段对其进行限流(但永远不会低于其 6A 下限)。
+`POST /chargers/{controllerUuid}/connectors/{connectorId}/schedules` 为单个连接器创建一个配置文件。在 **ACTIVE** 状态下,该连接器被视为优先级锁定:它将被排除在常规负载管理之外,并以不受限的方式运行,最高可达 `limitKw` —— 仅当整个位置超出其电网限制时,才会作为最后手段对其进行限流(但永远不会低于其 6A 下限)。
 
 ## 集群
 

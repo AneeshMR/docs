@@ -34,10 +34,10 @@ info:
       `permanentLimitKw`.
     - L'invio di un profilo a una priorità che ne ha già uno per quel target
       lo **sostituisce**.
-    - Un cron job a 1 minuto (`emLimitProcessor`) applica e ripristina i
-      profili automaticamente in base a `startTime`/`endTime` — non sono
-      necessarie ulteriori chiamate API. I record dei profili non vengono mai
-      eliminati, quindi la cronologia rimane interrogabile.
+    - I profili vengono applicati e ripristinati automaticamente in base a
+      `startTime`/`endTime` — una volta creato un profilo non sono necessarie
+      ulteriori chiamate API. I record dei profili non vengono mai eliminati,
+      quindi la cronologia rimane interrogabile.
 
     ## Errori
     Tutti gli errori condividono questa struttura:
@@ -211,12 +211,10 @@ paths:
         Crea un blocco di limite di potenza con finestra temporale per un
         singolo connettore.
 
-        Mentre la finestra è **ACTIVE**, `emLimitProcessor` contrassegna
-        questo connettore come priority-locked in `charger_priority_prod`
-        (`source=energy_management_api`). Lo smart charging esclude quindi
-        questo connettore dal normale ribilanciamento — funziona senza
-        limitazioni fino a `limitKw`, e viene limitato (mai sotto il suo
-        floor di 6A) solo come ultima risorsa se la location supera
+        Mentre la finestra è **ACTIVE**, questo connettore è considerato
+        priority-locked: viene escluso dalla normale gestione del carico e
+        funziona senza limitazioni fino a `limitKw`. Viene limitato (mai sotto
+        il suo minimo di 6A) solo come ultima risorsa se la location supera
         altrimenti il proprio limite di rete.
       parameters:
         - $ref: "#/components/parameters/ControllerUuid"
