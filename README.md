@@ -25,26 +25,51 @@ concepts/
   errors.mdx                               # Error codes reference
 api-reference/
   energy-management/
-    openapi.yaml                           # OpenAPI 3.1 spec — source of truth
-                                            # for the auto-generated, interactive
-                                            # "Try it" API reference pages
+    openapi.<lang>.yaml                    # OpenAPI 3.1 spec per language
+                                            # (de/en/es/fr/it/zh/pt) — descriptions
+                                            # translated, endpoints/schemas identical
+<lang>/api-reference/energy-management/     # per-endpoint stub .mdx pages, each
+  *.mdx                                     # pinned to its language's spec (this is
+                                            # how localized API reference works —
+                                            # the auto `openapi` group collides all
+                                            # languages onto one route, so don't use it)
 ```
+
+> **Internal details are intentionally excluded** from all spec/concept text:
+> no cron-job/function names (e.g. emLimitProcessor), internal table names, or
+> smart-charging/rebalancing mechanics. Document user-facing *behavior* only.
 
 ## Publishing
 
-1. Push this repo to GitHub.
-2. Connect the repo at [dashboard.mintlify.com](https://dashboard.mintlify.com)
-   — every push to `main` auto-deploys.
-3. Add the custom domain `docs.ridergy.com` in the Mintlify dashboard and
-   create the CNAME record it provides in DNS.
+This site lives at **docs.ridergy.com**, deployed by Mintlify from the
+GitHub-connected repo (`AneeshMR/docs`); the canonical repo is `Ridergy/docs`,
+so changes are pushed to **both** remotes:
+
+```bash
+git push origin main      # Ridergy/docs (canonical)
+git push mintlify main:main   # AneeshMR/docs (Mintlify-connected)
+```
+
+> **⚠️ Publishing is a MANUAL step.** Mintlify auto-deploy from the connected
+> repo is unreliable — builds frequently stall/queue and do not pick up the
+> push. After pushing, **publish manually from the Mintlify dashboard**
+> (the Deploy button). Do **not** wait/poll for the live site to update on its
+> own, and do not try to force a deploy with empty commits — it doesn't help.
+
+One-time setup (already done): repo connected at
+[app.mintlify.com](https://app.mintlify.com) with the Mintlify GitHub App, and
+custom domain `docs.ridergy.com` added with a CNAME →
+`cname.mintlify.builders`.
 
 ## Updating the API reference
 
-`api-reference/energy-management/openapi.yaml` is the source of truth for the
-Energy Management API reference pages. When endpoints change in
-`Product/lambda/energy_management_api/`, update this spec to match — validate
+The `api-reference/energy-management/openapi.<lang>.yaml` specs are the source
+of truth for the Energy Management API reference pages. When endpoints change in
+`Product/lambda/energy_management_api/`, update **all 7** specs to match (keep
+endpoints/schemas/examples identical across languages; translate only
+descriptions — and keep internal details out, see the note above). Validate
 with:
 
 ```bash
-npx @redocly/cli lint api-reference/energy-management/openapi.yaml
+npx @redocly/cli lint api-reference/energy-management/openapi.*.yaml
 ```
