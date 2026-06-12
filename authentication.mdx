@@ -1,32 +1,30 @@
 ---
-title: Authentifizierung
-description: "So authentifizierst du Anfragen an die RiDERgy-APIs"
+title: Authentication
+description: "How to authenticate requests to the RiDERgy APIs"
 ---
 
-## API-Schlüssel
+## API keys
 
-Jede Anfrage (außer `GET /health`) muss einen `x-api-key`-Header mit deinem
-API-Schlüssel enthalten:
+Every request (except `GET /health`) must include an `x-api-key` header with
+your API key:
 
 ```bash
 curl https://api.ridergy.com/v1/locations/3632155/limits \
   -H "x-api-key: YOUR_API_KEY"
 ```
 
-- Dein Mandant (Tenant) wird **ausschließlich** aus dem API-Schlüssel
-  abgeleitet — niemals aus einem Feld im Request-Body oder anderen Headern.
-  Ein Schlüssel deiner Organisation kann daher nicht auf Daten einer anderen
-  Organisation zugreifen oder diese verändern.
-- Kontaktiere RiDERgy, um die Energy Management API für dein Konto zu
-  aktivieren und einen API-Schlüssel zu erhalten. Ist das Feature nicht
-  aktiviert, schlagen Anfragen mit `403 FEATURE_NOT_ENABLED` fehl.
-- Schlüssel können ablaufen. Ein abgelaufener oder ungültiger Schlüssel
-  liefert `401 UNAUTHORIZED` (derselbe generische Fehler in beiden Fällen,
-  sodass keine Information über die Gültigkeit des Schlüssels preisgegeben
-  wird).
+- Your tenant is derived **only** from the API key — never from any field in
+  the request body or other headers. A key issued for your organization
+  cannot read or modify another organization's data.
+- Contact RiDERgy to have the Energy Management API enabled for your account
+  and to receive an API key. Without the feature enabled, requests fail with
+  `403 FEATURE_NOT_ENABLED`.
+- Keys can expire. An expired or invalid key returns `401 UNAUTHORIZED` (the
+  same generic error for both, so no information about key validity is
+  leaked).
 
-## Die "Try it"-Sandbox verwenden
+## Using the "Try it" playground
 
-Jede Endpunkt-Seite in der **API Reference** enthält ein Panel, in dem du
-deinen API-Schlüssel einfügen und eine echte Anfrage an die Produktions-API
-senden kannst. Die dort angezeigten Antworten stammen vom Live-System.
+Each endpoint page in the **API Reference** has a panel where you can paste
+your API key and send a real request to the production API. Responses shown
+there come from the live system.

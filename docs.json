@@ -15,21 +15,20 @@
   "navigation": {
     "languages": [
       {
-        "language": "de",
-        "default": true,
+        "language": "en",
         "tabs": [
           {
-            "tab": "Dokumentation",
+            "tab": "Documentation",
             "groups": [
               {
-                "group": "Erste Schritte",
+                "group": "Get Started",
                 "pages": [
                   "index",
                   "authentication"
                 ]
               },
               {
-                "group": "Konzepte",
+                "group": "Concepts",
                 "pages": [
                   "concepts/priority-model",
                   "concepts/errors"
@@ -38,16 +37,16 @@
             ]
           },
           {
-            "tab": "API-Referenz",
+            "tab": "API Reference",
             "groups": [
               {
-                "group": "Systemstatus",
+                "group": "Health",
                 "pages": [
                   "api-reference/energy-management/health"
                 ]
               },
               {
-                "group": "Standorte",
+                "group": "Locations",
                 "pages": [
                   "api-reference/energy-management/create-location-schedule",
                   "api-reference/energy-management/get-location-limits",
@@ -55,20 +54,20 @@
                 ]
               },
               {
-                "group": "Ladepunkte",
+                "group": "Chargers",
                 "pages": [
                   "api-reference/energy-management/create-charger-lock"
                 ]
               },
               {
-                "group": "Organisationen",
+                "group": "Organizations",
                 "pages": [
                   "api-reference/energy-management/create-organization-schedule",
                   "api-reference/energy-management/list-organization-limits"
                 ]
               },
               {
-                "group": "Cluster",
+                "group": "Clusters",
                 "pages": [
                   "api-reference/energy-management/create-cluster",
                   "api-reference/energy-management/list-clusters",
@@ -80,69 +79,70 @@
               }
             ]
           }
-        ]
+        ],
+        "default": true
       },
       {
-        "language": "en",
+        "language": "de",
         "tabs": [
           {
-            "tab": "Documentation",
+            "tab": "Dokumentation",
             "groups": [
               {
-                "group": "Get Started",
+                "group": "Erste Schritte",
                 "pages": [
-                  "en/index",
-                  "en/authentication"
+                  "de/index",
+                  "de/authentication"
                 ]
               },
               {
-                "group": "Concepts",
+                "group": "Konzepte",
                 "pages": [
-                  "en/concepts/priority-model",
-                  "en/concepts/errors"
+                  "de/concepts/priority-model",
+                  "de/concepts/errors"
                 ]
               }
             ]
           },
           {
-            "tab": "API Reference",
+            "tab": "API-Referenz",
             "groups": [
               {
-                "group": "Health",
+                "group": "Systemstatus",
                 "pages": [
-                  "en/api-reference/energy-management/health"
+                  "de/api-reference/energy-management/health"
                 ]
               },
               {
-                "group": "Locations",
+                "group": "Standorte",
                 "pages": [
-                  "en/api-reference/energy-management/create-location-schedule",
-                  "en/api-reference/energy-management/get-location-limits",
-                  "en/api-reference/energy-management/set-location-limit"
+                  "de/api-reference/energy-management/create-location-schedule",
+                  "de/api-reference/energy-management/get-location-limits",
+                  "de/api-reference/energy-management/set-location-limit"
                 ]
               },
               {
-                "group": "Chargers",
+                "group": "Ladepunkte",
                 "pages": [
-                  "en/api-reference/energy-management/create-charger-lock"
+                  "de/api-reference/energy-management/create-charger-lock"
                 ]
               },
               {
-                "group": "Organizations",
+                "group": "Organisationen",
                 "pages": [
-                  "en/api-reference/energy-management/create-organization-schedule",
-                  "en/api-reference/energy-management/list-organization-limits"
+                  "de/api-reference/energy-management/create-organization-schedule",
+                  "de/api-reference/energy-management/list-organization-limits"
                 ]
               },
               {
-                "group": "Clusters",
+                "group": "Cluster",
                 "pages": [
-                  "en/api-reference/energy-management/create-cluster",
-                  "en/api-reference/energy-management/list-clusters",
-                  "en/api-reference/energy-management/get-cluster",
-                  "en/api-reference/energy-management/update-cluster",
-                  "en/api-reference/energy-management/delete-cluster",
-                  "en/api-reference/energy-management/apply-cluster-schedule"
+                  "de/api-reference/energy-management/create-cluster",
+                  "de/api-reference/energy-management/list-clusters",
+                  "de/api-reference/energy-management/get-cluster",
+                  "de/api-reference/energy-management/update-cluster",
+                  "de/api-reference/energy-management/delete-cluster",
+                  "de/api-reference/energy-management/apply-cluster-schedule"
                 ]
               }
             ]
@@ -488,5 +488,11 @@
   },
   "footer": {
     "socials": {}
-  }
+  },
+  "redirects": [
+    {
+      "source": "/en/:slug*",
+      "destination": "/:slug*"
+    }
+  ]
 }

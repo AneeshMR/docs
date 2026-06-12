@@ -1,11 +1,11 @@
 ---
-title: Fehler
-description: "Format und Codes der Fehlerantworten"
+title: Errors
+description: "Error response format and codes"
 ---
 
 ## Format
 
-Alle Fehlerantworten haben dieselbe Struktur:
+All error responses share this shape:
 
 ```json
 {
@@ -17,21 +17,21 @@ Alle Fehlerantworten haben dieselbe Struktur:
 }
 ```
 
-`requestId` ist pro Anfrage eindeutig — gib sie an, wenn du den RiDERgy
-Support zu einem bestimmten Fehler kontaktierst.
+`requestId` is unique per request — include it when contacting RiDERgy
+support about a specific error.
 
-## Fehlercodes
+## Error codes
 
-| Code | HTTP-Status | Bedeutung |
+| Code | HTTP status | Meaning |
 | --- | --- | --- |
-| `UNAUTHORIZED` | 401 | API-Schlüssel fehlt, ist ungültig, inaktiv oder abgelaufen. |
-| `FEATURE_NOT_ENABLED` | 403 | Die Energy Management API ist für deinen Mandanten nicht aktiviert. |
-| `INVALID_REQUEST_BODY` | 400 | Im Request-Body fehlen Pflichtfelder, das JSON ist ungültig, oder die Validierung schlägt fehl (z. B. `limitKw <= 0`, `endTime <= startTime`, `endTime` liegt in der Vergangenheit, `priority` außerhalb von 0–10). |
-| `TARGET_INACTIVE` | 400 | Der Zielstandort ist als inaktiv markiert. |
-| `LOCATION_NOT_FOUND` | 404 | Es existiert kein Standort mit der angegebenen `locationId` für deinen Mandanten. |
-| `CHARGER_NOT_FOUND` | 404 | Es existiert kein Connector mit der angegebenen `controllerUuid`/`connectorId` für deinen Mandanten. |
-| `CLUSTER_NOT_FOUND` | 404 | Es existiert kein Cluster mit der angegebenen `clusterId` für deinen Mandanten. |
-| `CLUSTER_INACTIVE` | 400 | Der `status` des Clusters ist `INACTIVE`. |
-| `CLUSTER_EMPTY` | 400 | Der Cluster enthält keine Standorte. |
-| `NOT_FOUND` | 404 | Die Kombination aus Pfad und Methode ist kein gültiger Endpunkt. |
-| `INTERNAL_ERROR` | 500 | Unerwarteter serverseitiger Fehler. |
+| `UNAUTHORIZED` | 401 | Missing, invalid, inactive, or expired API key. |
+| `FEATURE_NOT_ENABLED` | 403 | The Energy Management API is not enabled for your tenant. |
+| `INVALID_REQUEST_BODY` | 400 | The request body is missing required fields, malformed JSON, or fails validation (e.g. `limitKw <= 0`, `endTime <= startTime`, `endTime` in the past, `priority` outside 0–10). |
+| `TARGET_INACTIVE` | 400 | The target location is marked inactive. |
+| `LOCATION_NOT_FOUND` | 404 | No location with the given `locationId` exists for your tenant. |
+| `CHARGER_NOT_FOUND` | 404 | No connector with the given `controllerUuid`/`connectorId` exists for your tenant. |
+| `CLUSTER_NOT_FOUND` | 404 | No cluster with the given `clusterId` exists for your tenant. |
+| `CLUSTER_INACTIVE` | 400 | The cluster's `status` is `INACTIVE`. |
+| `CLUSTER_EMPTY` | 400 | The cluster has no member locations. |
+| `NOT_FOUND` | 404 | The path/method combination is not a valid endpoint. |
+| `INTERNAL_ERROR` | 500 | Unexpected server-side error. |

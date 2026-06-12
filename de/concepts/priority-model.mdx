@@ -1,0 +1,77 @@
+---
+title: Prioritätsmodell
+description: "Wie Limit-Profile, Prioritäten und effektive Limits funktionieren"
+---
+
+Standort- und Ladepunkt-Limits werden über **prioritätsbasierte,
+zeitfensterbezogene Profile** gesteuert, die von den Endpunkten für Standorte,
+Ladepunkte und Cluster gemeinsam genutzt werden.
+
+## Prioritätsstufen
+
+- Prioritäten reichen von **0 (niedrigste) bis 10 (höchste)** — analog zu den
+  Stack-Levels von OCPP-Ladeprofilen.
+- Jedes Ziel (ein Standort oder ein Ladepunkt-Connector) kann **bis zu 11
+  Profile** haben — eines pro Prioritätsstufe — jeweils mit eigenem
+  `[startTime, endTime)`-Zeitfenster.
+- Wird ein neues Profil mit einer Priorität übermittelt, die für dieses Ziel
+  bereits existiert, **ersetzt** es das vorhandene Profil.
+
+## Effektives Limit
+
+Zu jedem Zeitpunkt ist das **effektive Limit** der `limitKw`-Wert des
+**Profils mit der höchsten Priorität, dessen Zeitfenster gerade aktiv ist**
+(`startTime <= now < endTime`).
+
+Ist gerade kein Profil aktiv:
+
+- **Standorte** fallen zurück auf `permanentLimitKw` (gesetzt über
+  `PUT /locations/{locationId}/limit`).
+- **Ladepunkte** haben keinen Fallback — außerhalb eines aktiven Zeitfensters
+  ist der Connector nicht prioritätsgesperrt und wird durch das normale
+  Lastmanagement gesteuert.
+
+## Automatisches Anwenden/Zurücksetzen
+
+Profile werden automatisch zu ihrer `startTime`/`endTime` angewendet bzw.
+zurückgesetzt — **es sind keine weiteren API-Aufrufe nötig**, sobald ein Profil
+erstellt wurde.
+
+Profil-Datensätze werden beim Ablauf **niemals gelöscht**, sodass der
+gesamte Profil-Verlauf weiterhin über `GET /locations/{locationId}/limits` und
+`GET /organizations/limits` abrufbar ist.
+
+## Statuswerte
+
+Jedes Profil meldet einen berechneten `status`:
+
+| Status      | Bedeutung                                  |
+| ----------- | ------------------------------------------- |
+| `SCHEDULED` | `now < startTime` — noch nicht aktiv         |
+| `ACTIVE`    | `startTime <= now < endTime`                 |
+| `EXPIRED`   | `now >= endTime`                             |
+
+## Ladepunkt-Sperren
+
+`POST /chargers/{controllerUuid}/connectors/{connectorId}/schedules` erstellt
+ein Profil für einen einzelnen Connector. Solange es **ACTIVE** ist, ist der
+Connector prioritätsgesperrt: Er wird vom normalen Lastmanagement ausgenommen
+und läuft ungedrosselt bis zu `limitKw` — er wird nur als letztes Mittel
+gedrosselt (nie unter seine 6A-Untergrenze), falls der Standort insgesamt sein
+Netzanschluss-Limit überschreitet.
+
+## Cluster
+
+Ein [Cluster](/de/api-reference/energy-management/apply-cluster-schedule)
+gruppiert mehrere Standorte unter einer gemeinsamen, optionalen
+kW-Obergrenze. Würde der gemeinsame Verbrauch des Clusters `limitKw`
+überschreiten, wird das effektive Limit jedes Mitgliedsstandorts proportional
+herunterskaliert:
+
+```
+scale = min(1, clusterLimitKw / sum(memberLocationLimits))
+locationEffectiveLimit = locationSetLimitKw * scale
+```
+
+`POST /clusters/{clusterId}/schedules` wendet ein `LimitProfileRequest`
+gleichzeitig auf alle Standorte im Cluster an.
