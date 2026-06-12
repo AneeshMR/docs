@@ -1,0 +1,74 @@
+---
+title: Quickstart
+description: "Make your first Energy Management API request in minutes"
+---
+
+This guide takes you end to end — from getting your credentials to scheduling a charging-limit profile and watching it take effect.
+
+## Prerequisites
+
+You need two things, both from the **RiDERgy app**:
+
+1. **An API key.** Your tenant must have the Energy Management API enabled. Contact RiDERgy to enable it and issue your key — see [Authentication](/authentication).
+2. **The IDs of the resources you want to control** — a `locationId`, a charger's `controllerUuid`/`connectorId`, or a `clusterId`. These come from your RiDERgy account: if you have a RiDERgy account with an integrated location, you can look the IDs up in the **RiDERgy app**. They identify the same locations and chargers you see there.
+
+<Note>
+The interactive **Try it** panels send requests to the **live production API**. A `POST`/`PUT` here changes a real site. Only use values you actually intend to apply.
+</Note>
+
+## 1. Check connectivity
+
+`GET /health` needs no API key and confirms the API is reachable:
+
+```bash
+curl https://api.ridergy.com/v1/health
+```
+```json
+{ "status": "ok" }
+```
+
+## 2. Set a location's permanent limit
+
+The permanent limit is the fallback applied whenever no scheduled profile is active.
+
+```bash
+curl -X PUT https://api.ridergy.com/v1/locations/{locationId}/limit \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "limitKw": 100 }'
+```
+
+## 3. Schedule a priority profile
+
+Limit the location to 50 kW during a specific window, at priority 5:
+
+```bash
+curl -X POST https://api.ridergy.com/v1/locations/{locationId}/schedules \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "startTime": "2026-01-01T08:00:00Z",
+    "endTime":   "2026-01-01T18:00:00Z",
+    "limitKw":   50,
+    "priority":  5
+  }'
+```
+
+The profile is applied and reverted automatically at its `startTime`/`endTime` — no further API calls are needed.
+
+## 4. Verify the effective limit
+
+This returns every profile with a computed `status` (`SCHEDULED`, `ACTIVE`, `EXPIRED`) and the current `effectiveLimitKw`:
+
+```bash
+curl https://api.ridergy.com/v1/locations/{locationId}/limits \
+  -H "x-api-key: YOUR_API_KEY"
+```
+
+See the [Priority model](/concepts/priority-model) for exactly how the effective limit is resolved.
+
+## Next steps
+
+- [Authentication](/authentication) — API keys, tenant isolation, and error handling.
+- [Priority model](/concepts/priority-model) — how profiles, priorities, and clusters interact.
+- Use the **API Reference** to explore every endpoint with a live playground.

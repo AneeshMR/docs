@@ -1,0 +1,74 @@
+---
+title: 快速开始
+description: "在几分钟内完成你对 Energy Management API 的首次调用"
+---
+
+本指南带你完成完整流程：从获取凭据到调度充电限制配置文件并使其生效。
+
+## 前提条件
+
+你需要两样东西，二者都来自 **RiDERgy 应用**：
+
+1. **一个 API 密钥。** 你的租户必须已启用 Energy Management API。请联系 RiDERgy 启用并签发密钥——参见[身份验证](/zh/authentication)。
+2. **你想要控制的资源的 ID**——`locationId`、充电桩的 `controllerUuid`/`connectorId`,或 `clusterId`。它们来自你的 RiDERgy 账户:如果你拥有已集成位置的 RiDERgy 账户,可以在 **RiDERgy 应用**中查询这些 ID。它们标识的正是你在应用中看到的相同位置和充电桩。
+
+<Note>
+交互式 **“Try it”** 面板会向**生产环境实时 API** 发送请求。此处的 `POST`/`PUT` 会更改真实的站点。请仅使用你确实打算应用的值。
+</Note>
+
+## 1. 检查连通性
+
+`GET /health` 无需 API 密钥,用于确认 API 可访问:
+
+```bash
+curl https://api.ridergy.com/v1/health
+```
+```json
+{ "status": "ok" }
+```
+
+## 2. 设置位置的永久限制
+
+永久限制是在没有任何已调度配置文件处于活动状态时应用的回退值。
+
+```bash
+curl -X PUT https://api.ridergy.com/v1/locations/{locationId}/limit \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "limitKw": 100 }'
+```
+
+## 3. 调度优先级配置文件
+
+在特定时间窗口内以优先级 5 将该位置限制为 50 kW:
+
+```bash
+curl -X POST https://api.ridergy.com/v1/locations/{locationId}/schedules \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "startTime": "2026-01-01T08:00:00Z",
+    "endTime":   "2026-01-01T18:00:00Z",
+    "limitKw":   50,
+    "priority":  5
+  }'
+```
+
+配置文件会在其 `startTime`/`endTime` 自动应用和撤销——无需进一步调用 API。
+
+## 4. 验证有效限制
+
+这会返回每个配置文件及其计算得出的 `status`(`SCHEDULED`、`ACTIVE`、`EXPIRED`),以及当前的 `effectiveLimitKw`:
+
+```bash
+curl https://api.ridergy.com/v1/locations/{locationId}/limits \
+  -H "x-api-key: YOUR_API_KEY"
+```
+
+请参阅[优先级模型](/zh/concepts/priority-model),了解有效限制的确切解析方式。
+
+## 后续步骤
+
+- [身份验证](/zh/authentication)——API 密钥、租户隔离和错误处理。
+- [优先级模型](/zh/concepts/priority-model)——配置文件、优先级和集群如何相互作用。
+- 使用 **API 参考**,通过实时环境探索每个端点。

@@ -24,6 +24,7 @@
                 "group": "Get Started",
                 "pages": [
                   "index",
+                  "quickstart",
                   "authentication"
                 ]
               },
@@ -92,6 +93,7 @@
                 "group": "Erste Schritte",
                 "pages": [
                   "de/index",
+                  "de/quickstart",
                   "de/authentication"
                 ]
               },
@@ -159,6 +161,7 @@
                 "group": "Primeros pasos",
                 "pages": [
                   "es/index",
+                  "es/quickstart",
                   "es/authentication"
                 ]
               },
@@ -226,6 +229,7 @@
                 "group": "Premiers pas",
                 "pages": [
                   "fr/index",
+                  "fr/quickstart",
                   "fr/authentication"
                 ]
               },
@@ -293,6 +297,7 @@
                 "group": "Per iniziare",
                 "pages": [
                   "it/index",
+                  "it/quickstart",
                   "it/authentication"
                 ]
               },
@@ -360,6 +365,7 @@
                 "group": "快速开始",
                 "pages": [
                   "zh/index",
+                  "zh/quickstart",
                   "zh/authentication"
                 ]
               },
@@ -427,6 +433,7 @@
                 "group": "Primeiros passos",
                 "pages": [
                   "pt/index",
+                  "pt/quickstart",
                   "pt/authentication"
                 ]
               },
@@ -494,5 +501,20 @@
       "source": "/en/:slug*",
       "destination": "/:slug*"
     }
-  ]
+  ],
+  "api": {
+    "playground": {
+      "display": "interactive"
+    },
+    "examples": {
+      "languages": [
+        "bash",
+        "python",
+        "javascript",
+        "go",
+        "php",
+        "java"
+      ]
+    }
+  }
 }

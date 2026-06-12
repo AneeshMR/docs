@@ -1,0 +1,74 @@
+---
+title: Schnellstart
+description: "Stelle deine erste Anfrage an die Energy Management API in wenigen Minuten"
+---
+
+Diese Anleitung führt dich vollständig durch den Ablauf — von den Zugangsdaten bis zum Planen eines Ladelimit-Profils und dessen Wirkung.
+
+## Voraussetzungen
+
+Du benötigst zwei Dinge, beide aus der **RiDERgy-App**:
+
+1. **Einen API-Schlüssel.** Für deinen Mandanten muss die Energy Management API aktiviert sein. Kontaktiere RiDERgy, um sie zu aktivieren und einen Schlüssel zu erhalten — siehe [Authentifizierung](/de/authentication).
+2. **Die IDs der Ressourcen, die du steuern möchtest** — eine `locationId`, die `controllerUuid`/`connectorId` eines Ladepunkts oder eine `clusterId`. Diese stammen aus deinem RiDERgy-Konto: Wenn du ein RiDERgy-Konto mit einem integrierten Standort hast, kannst du die IDs in der **RiDERgy-App** nachschlagen. Sie bezeichnen dieselben Standorte und Ladepunkte, die du dort siehst.
+
+<Note>
+Die interaktiven **„Try it“**-Felder senden Anfragen an die **produktive Live-API**. Ein `POST`/`PUT` verändert hier einen echten Standort. Verwende nur Werte, die du wirklich anwenden möchtest.
+</Note>
+
+## 1. Verbindung prüfen
+
+`GET /health` benötigt keinen API-Schlüssel und bestätigt, dass die API erreichbar ist:
+
+```bash
+curl https://api.ridergy.com/v1/health
+```
+```json
+{ "status": "ok" }
+```
+
+## 2. Permanentes Limit eines Standorts setzen
+
+Das permanente Limit ist der Fallback, der gilt, wenn kein geplantes Profil aktiv ist.
+
+```bash
+curl -X PUT https://api.ridergy.com/v1/locations/{locationId}/limit \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "limitKw": 100 }'
+```
+
+## 3. Prioritätsprofil planen
+
+Begrenze den Standort während eines bestimmten Zeitfensters auf 50 kW, mit Priorität 5:
+
+```bash
+curl -X POST https://api.ridergy.com/v1/locations/{locationId}/schedules \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "startTime": "2026-01-01T08:00:00Z",
+    "endTime":   "2026-01-01T18:00:00Z",
+    "limitKw":   50,
+    "priority":  5
+  }'
+```
+
+Das Profil wird automatisch zu seiner `startTime`/`endTime` angewendet und zurückgesetzt — weitere API-Aufrufe sind nicht nötig.
+
+## 4. Effektives Limit überprüfen
+
+Dies gibt jedes Profil mit einem berechneten `status` (`SCHEDULED`, `ACTIVE`, `EXPIRED`) sowie das aktuelle `effectiveLimitKw` zurück:
+
+```bash
+curl https://api.ridergy.com/v1/locations/{locationId}/limits \
+  -H "x-api-key: YOUR_API_KEY"
+```
+
+Im [Prioritätsmodell](/de/concepts/priority-model) ist genau beschrieben, wie das effektive Limit ermittelt wird.
+
+## Nächste Schritte
+
+- [Authentifizierung](/de/authentication) — API-Schlüssel, Mandantentrennung und Fehlerbehandlung.
+- [Prioritätsmodell](/de/concepts/priority-model) — wie Profile, Prioritäten und Cluster zusammenwirken.
+- Nutze die **API-Referenz**, um jeden Endpunkt mit einer Live-Umgebung zu erkunden.
